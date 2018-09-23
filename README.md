@@ -35,6 +35,6 @@ MPI sends data between the machines, OPM calculates by parallel work with CPU th
 
 ## Author
 
-* **Liad Khamd** - *Final project* - [LKH](https://github.com/LiadKhamd)
+* **Liad Khamd** - [LKH](https://github.com/LiadKhamd)
 
 ####  For more details please visit [Project Wiki](https://github.com/LiadKhamd/K-Means/wiki)
