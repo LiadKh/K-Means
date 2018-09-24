@@ -4,7 +4,7 @@ k-means clustering is a method of vector quantization, which aims to partition n
 
 ### Prerequisites
 
-Nvidia GPU with cuda support, than install: 
+Nvidia GPU with cuda support, then install: 
 
 Visual Studio 2015 
 
@@ -26,11 +26,11 @@ Open the program in Visual Studio
 
 Build the program in the same path on the machines 
 
-In your main computer - open wmpiexec and enter computers ips and the build path with input.txt file. Don't forget to select the number of process (Please set the number of computer you have inserted)
+In your main computer - open wmpiexec and enter computers ips and the build path with "input.txt" file. Don't forget to select the number of processes (Please set the number of computers you have inserted)
 
 ## Deployment
 
-This project is Parallel implementation of K-Means to optimize the algorithm.
+This project is a parallel implementation of K-Means to optimize the algorithm.
 MPI sends data between the machines, OPM calculates by parallel work with CPU thread and CUDA calculates by parallel work with GPU.
 
 ## Author
