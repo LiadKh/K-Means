@@ -21,7 +21,7 @@ void sendPoints(float* allPoints, float** myPoints, int *numberOfPoints)
 
 void getPoints(float* allPoints, float* myPoints, int numberOfPoints)
 {//Get points
-	MPI_Gather(myPoints, numberOfPoints * DIMENSION * 2, MPI_FLOAT, allPoints, numberOfPoints * DIMENSION * 2, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
+	MPI_Gather(myPoints, numberOfPoints * DIMENSION, MPI_FLOAT, allPoints, numberOfPoints * DIMENSION * 2, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
 }
 
 
