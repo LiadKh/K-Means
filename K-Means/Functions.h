@@ -8,3 +8,4 @@
 #include "OmpFunctions.h"
 
 float* readDataFile(char* fname, int *N, int* K, int* T, float* dT, float* LIMIT, float* QM);
+void mpiFinish();

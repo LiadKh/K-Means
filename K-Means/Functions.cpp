@@ -6,15 +6,14 @@ float* readDataFile(char* fname, int *N, int* K, int* T, float* dT, float* LIMIT
 	FILE* f = fopen(fname, "r");
 	if (f == NULL)
 	{
-		printf("Failed opening the file. Exiting!\n");
+		printf("Failed opening the file. Exiting!\n"); fflush(stdout);
 		exit(EXIT_FAILURE);
 	}
 	fscanf(f, "%d %d %d %f %f %f", N, K, T, dT, LIMIT, QM);
-	printf("%d %d %d %f %f %f\n", *N, *K, *T, *dT, *LIMIT, *QM);
 	points = (float*)malloc((*N) * sizeof(float) * DIMENSION * 2);
 	if (points == NULL)
 	{
-		printf("Not enough memory. Exiting!\n");
+		printf("Not enough memory. Exiting!\n"); fflush(stdout);
 		exit(EXIT_FAILURE);
 	}
 	for (int i = 0; i < *N; i++)
