@@ -1,7 +1,10 @@
 #pragma once
 
 #include "Const.h"
-#include <mpi.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include "MpiFunctions.h"
+#include "CudaFunctions.h"
+#include "OmpFunctions.h"
 
-void MpiInit(int *argc, char** argv[], int *rank, int *numprocs);
+float* readDataFile(char* fname, int *N, int* K, int* T, float* dT, float* LIMIT, float* QM);
