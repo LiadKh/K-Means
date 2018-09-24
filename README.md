@@ -28,7 +28,7 @@ Build the program in the same path on the machines
 
 In your main computer - open wmpiexec and enter computers ips and the build path with "input.txt" file. Don't forget to select the number of processes (Please set the number of computers you have inserted)
 
-## Deployment
+## Parallel and Distributed Computing
 
 This project is a parallel implementation of K-Means to optimize the algorithm.
 MPI sends data between the machines, OPM calculates by parallel work with CPU thread and CUDA calculates by parallel work with GPU.
