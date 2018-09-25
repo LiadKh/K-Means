@@ -7,5 +7,4 @@
 #include "CudaFunctions.h"
 #include "OmpFunctions.h"
 
-float* readDataFile(char* fname, int *N, int* K, int* T, float* dT, float* LIMIT, float* QM);
-void mpiFinish();
+point_t* readDataFile(char* fname, int *N, int* K, int* T, float* dT, int* LIMIT, float* QM);

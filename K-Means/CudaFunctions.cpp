@@ -1,10 +1,10 @@
 #include "CudaFunctions.h"
 
-bool cudaInicDT(float* points, int numberOfPoints, float dt, float** inicedPoints)
+bool incDTpoint(point_t* points, int numberOfPoints, float dt, point_t** inicedPoints)
 {//Inic the points with dt time
 	bool status = true;
-	*inicedPoints = (float*)malloc(numberOfPoints*DIMENSION * sizeof(float));
-	cudaError_t cudaStatus = inicDTWithCuda(points, numberOfPoints, DIMENSION, dt, inicedPoints);// Inic points arr with dt time in parallel.
+	*inicedPoints = (point_t*)malloc(numberOfPoints * sizeof(point_t));
+	cudaError_t cudaStatus = incDTWithCuda(points, numberOfPoints, dt, *inicedPoints);// Inic points arr with dt time in parallel.
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "inicDTWithCuda failed!");
 		status = false;
