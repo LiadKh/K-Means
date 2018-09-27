@@ -11,4 +11,5 @@ typedef struct
 	float vx;
 	float vy;
 	float vz;
+	int cluster;
 } point_t;

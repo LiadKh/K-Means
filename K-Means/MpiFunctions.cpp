@@ -8,26 +8,26 @@ void mpiInit(int *argc, char** argv[], int *rank, int *numprocs)
 }
 
 void commitMpiPointType()
-{
+{// Create MPI user data type for point
 	point_t pointWithVelocity;
-	MPI_Datatype type[6] = { MPI_FLOAT, MPI_FLOAT, MPI_FLOAT ,MPI_FLOAT, MPI_FLOAT, MPI_FLOAT };
-	int blocklen[6] = { 1, 1, 1,1, 1, 1 };
-	MPI_Aint disp[6];
+	MPI_Datatype type[7] = { MPI_FLOAT, MPI_FLOAT, MPI_FLOAT ,MPI_FLOAT, MPI_FLOAT, MPI_FLOAT,MPI_INT };
+	int blocklen[7] = { 1, 1, 1, 1, 1, 1, 1 };
+	MPI_Aint disp[7];
 
-	// Create MPI user data type for point
 	disp[0] = (char *)&pointWithVelocity.x - (char *)&pointWithVelocity;
 	disp[1] = (char *)&pointWithVelocity.y - (char *)&pointWithVelocity;
 	disp[2] = (char *)&pointWithVelocity.z - (char *)&pointWithVelocity;
 	disp[3] = (char *)&pointWithVelocity.vx - (char *)&pointWithVelocity;
 	disp[4] = (char *)&pointWithVelocity.vy - (char *)&pointWithVelocity;
 	disp[5] = (char *)&pointWithVelocity.vz - (char *)&pointWithVelocity;
-	MPI_Type_create_struct(6, blocklen, disp, type, &PointMPIType);
+	disp[5] = (char *)&pointWithVelocity.cluster - (char *)&pointWithVelocity;
+	MPI_Type_create_struct(7, blocklen, disp, type, &PointMPIType);
 	MPI_Type_commit(&PointMPIType);
 
 }
 
 void scatterPoints(point_t* allPoints, point_t** myPoints, int *numberOfPoints, float *dt)
-{//Sent points
+{//Sent points from master process
 	MPI_Bcast(numberOfPoints, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
 	MPI_Bcast(dt, 1, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
 	*myPoints = (point_t*)malloc((*numberOfPoints) * sizeof(point_t));
@@ -40,7 +40,7 @@ void scatterPoints(point_t* allPoints, point_t** myPoints, int *numberOfPoints, 
 }
 
 void gatherPoints(point_t* allPoints, point_t* myPoints, int numberOfPoints)
-{//Get points
+{//Get points to master process
 	MPI_Gather(myPoints, numberOfPoints, PointMPIType, allPoints, numberOfPoints, PointMPIType, MASTER, MPI_COMM_WORLD);
 }
 
