@@ -23,3 +23,22 @@ point_t* readDataFile(char* fname, int *N, int* K, int* T, float* dT, int* LIMIT
 	fclose(f);
 	return points;
 }
+
+point_t* chooseK(point_t* points, int numberOfPoints,int k)
+{
+	if (k < numberOfPoints)
+	{
+		printf("More clusters than points");
+		exit(EXIT_FAILURE);
+	}
+	point_t* clusters = (point_t*)malloc(k * sizeof(point_t));
+	memcpy(clusters, points, k * sizeof(point_t));
+}
+
+void interaction(point_t* points, int numberOfPoints, point_t* clusters, int k, float *dt)
+{
+	broadcastDataDt(dt);
+	point_t* inicedMyPoints = incPoints(points, numberOfPoints, *dt);
+	setClosestCluster(points, numberOfPoints, clusters, k);
+	//need to calc the new centers
+}

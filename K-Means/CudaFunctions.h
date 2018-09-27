@@ -7,5 +7,5 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-bool incDTpoint(point_t* points, int numberOfPoints, float dt, point_t** inicedPoints);
-cudaError_t incDTWithCuda(point_t* points, int numberOfPoints, float dt, point_t* inicedPoints);
+point_t* incPoints(point_t* points, int numberOfPoints, float dt);
+cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dt, point_t* inicedPoints);

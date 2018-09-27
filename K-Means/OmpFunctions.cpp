@@ -5,7 +5,7 @@ double distance2Points(point_t p1, point_t p2)
 	return sqrt(pow(p1.x + p2.x, 2) + pow(p1.y + p2.y, 2) + pow(p1.z + p2.z, 2));
 }
 
-void setClosestCluster(point_t* points, int numberOfPoints, point_t* cluster, int numberOfCluster)
+void setClosestCluster(point_t* points, int numberOfPoints, point_t* clusters, int numberOfCluster)
 {
 	int tid, numberOfThreads = omp_get_max_threads();
 	point_t **setOfK = (point_t**)malloc(numberOfThreads * sizeof(point_t*));
@@ -14,7 +14,7 @@ void setClosestCluster(point_t* points, int numberOfPoints, point_t* cluster, in
 	{
 		tid = omp_get_thread_num();//Thread id
 		setOfK[tid] = (point_t*)calloc(numberOfCluster, sizeof(point_t));
-		memcpy(setOfK[tid], cluster, numberOfCluster * sizeof(point_t));
+		memcpy(setOfK[tid], clusters, numberOfCluster * sizeof(point_t));
 #pragma omp for
 		for (int i = 0; i < numberOfPoints; i++)
 		{
@@ -34,11 +34,10 @@ void setClosestCluster(point_t* points, int numberOfPoints, point_t* cluster, in
 	free(setOfK);
 }
 
-point_t* averageCluster(point_t* points, int numberOfPoints, point_t* cluster, int numberOfCluster)
+point_t* averageClusters(point_t* points, int numberOfPoints, int numberOfCluster)
 {
 	int tid, numberOfThreads = omp_get_max_threads();
-	point_t **setOfK = (point_t**)malloc(numberOfThreads * sizeof(point_t*));
-	point_t * result = (point_t*)malloc(numberOfCluster * sizeof(point_t));
+	point_t *result, **setOfK = (point_t**)malloc(numberOfThreads * sizeof(point_t*));
 #pragma omp parallel private(tid)
 	{
 		tid = omp_get_thread_num();//Thread id
@@ -54,20 +53,29 @@ point_t* averageCluster(point_t* points, int numberOfPoints, point_t* cluster, i
 				setOfK[tid][points[i].cluster].cluster++;
 			}
 		}
-#pragma omp for
-		for (int i = 0; i < numberOfCluster; i++)
+#pragma omp single
 		{
-			
-			for (int j = 0; j < numberOfThreads; j++)
-			{
-				result[i].x += setOfK[j][i].x;
-				result[i].y += setOfK[j][i].y;
-				result[i].z += setOfK[j][i].z;
-				result[i].cluster += setOfK[j][i].cluster;
-			}
+			result = combainPointsArrays(setOfK, numberOfThreads, numberOfCluster);
 		}
+
 		free(setOfK[tid]);
 	}
 	free(setOfK);
 	return result;
+}
+
+point_t* combainPointsArrays(point_t** points, int numberOfArrays, int pointsInArray)
+{
+	point_t * result = (point_t*)calloc(pointsInArray, sizeof(point_t));
+#pragma omp parallel for
+	for (int i = 0; i < pointsInArray; i++)
+	{
+		for (int j = 0; j < numberOfArrays; j++)
+		{
+			result[i].x += points[j][i].x;
+			result[i].y += points[j][i].y;
+			result[i].z += points[j][i].z;
+			result[i].cluster += points[j][i].cluster;
+		}
+	}
 }

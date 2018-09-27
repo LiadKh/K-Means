@@ -8,6 +8,7 @@ static MPI_Datatype PointMPIType;
 
 void mpiInit(int *argc, char** argv[], int *rank, int *numprocs);
 void commitMpiPointType();
-void scatterPoints(point_t* allPoints, point_t** myPoints, int *numberOfPoints, float *dt);
-void gatherPoints(point_t* allPoints, point_t* myPoints, int numberOfPoints);
+void broadcastDataDt(float *dt);
+void scatterPoints(point_t* allPoints, point_t** myPoints, int *numberOfPoints);
+point_t* gatherPoints(int rank, point_t* myPoints, int numberOfProcesses, int numberOfPointsToSend);
 void mpiFinish();

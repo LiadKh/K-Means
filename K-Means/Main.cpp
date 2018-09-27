@@ -26,9 +26,9 @@ int main(int argc, char* argv[])
 		myNumberOfPoints = int(N / numprocs);
 	}
 	commitMpiPointType();
-	scatterPoints(allPoints, &myPoints, &myNumberOfPoints, &dT);
-
-	point_t* inicedMyPoints;
+	scatterPoints(allPoints, &myPoints, &myNumberOfPoints);
+	work(myPoints, myNumberOfPoints);
+	
 	incDTpoint(myPoints, myNumberOfPoints, dT, &inicedMyPoints);
 
 	gatherPoints(allPoints, inicedMyPoints, myNumberOfPoints);

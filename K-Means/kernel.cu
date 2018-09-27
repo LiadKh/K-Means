@@ -7,7 +7,7 @@
 
 #define THREAD_IN_BLOCK 1024
 
-__global__ void incDTKernel(point_t *inicedPoints, const point_t *points, float dT, int numberOfPoints)
+__global__ void incKernel(point_t *inicedPoints, const point_t *points, float dT, int numberOfPoints)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index < numberOfPoints)
@@ -19,7 +19,7 @@ __global__ void incDTKernel(point_t *inicedPoints, const point_t *points, float 
 }
 
 // Helper function for using CUDA to add vectors in parallel.
-cudaError_t incDTWithCuda(point_t* points, int numberOfPoints, float dT, point_t* inicedPoints)
+cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dT, point_t* inicedPoints)
 {
 	point_t *dev_points = 0;
 	point_t *dev_iniced_points = 0;
@@ -56,7 +56,7 @@ cudaError_t incDTWithCuda(point_t* points, int numberOfPoints, float dT, point_t
 	if (numberOfPoints % THREAD_IN_BLOCK != 0)
 		numberOfBlock++;
 	// Launch a kernel on the GPU with one thread for each element.
-	incDTKernel << <numberOfBlock, THREAD_IN_BLOCK >> > (dev_iniced_points, dev_points, dT, numberOfPoints);
+	incKernel << <numberOfBlock, THREAD_IN_BLOCK >> > (dev_iniced_points, dev_points, dT, numberOfPoints);
 
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();

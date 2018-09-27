@@ -26,10 +26,14 @@ void commitMpiPointType()
 
 }
 
-void scatterPoints(point_t* allPoints, point_t** myPoints, int *numberOfPoints, float *dt)
+void broadcastDataDt(float *dt)
+{
+	MPI_Bcast(dt, 1, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
+}
+
+void scatterPoints(point_t* allPoints, point_t** myPoints, int *numberOfPoints)
 {//Sent points from master process
 	MPI_Bcast(numberOfPoints, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
-	MPI_Bcast(dt, 1, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
 	*myPoints = (point_t*)malloc((*numberOfPoints) * sizeof(point_t));
 	if (myPoints == NULL)
 	{
@@ -39,9 +43,13 @@ void scatterPoints(point_t* allPoints, point_t** myPoints, int *numberOfPoints, 
 	MPI_Scatter(allPoints, *numberOfPoints, PointMPIType, *myPoints, *numberOfPoints, PointMPIType, MASTER, MPI_COMM_WORLD);
 }
 
-void gatherPoints(point_t* allPoints, point_t* myPoints, int numberOfPoints)
+point_t* gatherPoints(int rank, point_t* myPoints, int numberOfProcesses, int numberOfPointsToSend)
 {//Get points to master process
-	MPI_Gather(myPoints, numberOfPoints, PointMPIType, allPoints, numberOfPoints, PointMPIType, MASTER, MPI_COMM_WORLD);
+	point_t *allPoints;
+	if (rank == MASTER)
+		allPoints = (point_t*)malloc(numberOfProcesses * numberOfPointsToSend * sizeof(point_t));
+	MPI_Gather(myPoints, numberOfPointsToSend, PointMPIType, allPoints, numberOfPointsToSend, PointMPIType, MASTER, MPI_COMM_WORLD);
+	return allPoints;
 }
 
 void mpiFinish()
