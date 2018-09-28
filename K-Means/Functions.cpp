@@ -24,7 +24,21 @@ point_t* readDataFile(char* fname, int *N, int* K, int* T, float* dT, int* LIMIT
 	return points;
 }
 
-point_t* chooseK(point_t* points, int numberOfPoints,int k)
+void initProcesses(int *argc, char** argv[], int *rank, int *numberOfProcesses)
+{
+	mpiInit(argc, argv, rank, numberOfProcesses);
+	commitMpiPointType();
+}
+
+void initProject(int rank, int numberOfPoints, point_t *allPoints, point_t **myPoints, int *myNumberOfPoints, point_t *clusters, int *k)
+{
+	if (rank == MASTER)
+		clusters = chooseK(allPoints, numberOfPoints, *k);
+	broadcastClusters(rank, &clusters, k);
+	scatterPoints(allPoints, myPoints, myNumberOfPoints);
+}
+
+point_t* chooseK(point_t* points, int numberOfPoints, int k)
 {
 	if (k < numberOfPoints)
 	{
@@ -35,10 +49,18 @@ point_t* chooseK(point_t* points, int numberOfPoints,int k)
 	memcpy(clusters, points, k * sizeof(point_t));
 }
 
-void interaction(point_t* points, int numberOfPoints, point_t* clusters, int k, float *dt)
+void interaction(point_t* points, int numberOfPoints, point_t* clusters, int rank, int numberOfProcess, int k, float *dt)
 {
-	broadcastDataDt(dt);
+	broadcastDT(dt);
 	point_t* inicedMyPoints = incPoints(points, numberOfPoints, *dt);
 	setClosestCluster(points, numberOfPoints, clusters, k);
+	point_t* newClusters = averageClusters(points, numberOfPoints, k);
+	point_t* newClusters = gatherPoints(rank, points, numberOfProcess, numberOfPoints);
+
+
+	if (rank == MASTER)
+	{
+
+	}
 	//need to calc the new centers
 }

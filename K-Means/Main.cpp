@@ -1,12 +1,11 @@
 #include "Functions.h"
-#include <stdlib.h>
 
 void printIt(point_t* points, int size)
 {
 	for (int i = 0; i < size; i++)
 	{
-		printf("%3f ", points[i].x); 
-		printf("%3f ", points[i].y); 
+		printf("%3f ", points[i].x);
+		printf("%3f ", points[i].y);
 		printf("%3f ", points[i].z);
 		printf("\n");
 	}
@@ -14,29 +13,20 @@ void printIt(point_t* points, int size)
 
 int main(int argc, char* argv[])
 {
-	int rank, numprocs;
+	int rank, numberOfProcesses;
 	int N, K, T, LIMIT, myNumberOfPoints;
 	float dT, QM;
-	point_t* allPoints, *myPoints;
+	point_t *allPoints, *myPoints, *clusters;
 
-	mpiInit(&argc, &argv, &rank, &numprocs);
+	initProcesses(&argc, &argv, &rank, &numberOfProcesses);
 	if (rank == MASTER)
 	{
 		allPoints = readDataFile(INPUT_FILE, &N, &K, &T, &dT, &LIMIT, &QM);
-		myNumberOfPoints = int(N / numprocs);
+		myNumberOfPoints = int(N / numberOfProcesses);
 	}
-	commitMpiPointType();
-	scatterPoints(allPoints, &myPoints, &myNumberOfPoints);
-	work(myPoints, myNumberOfPoints);
-	
-	incDTpoint(myPoints, myNumberOfPoints, dT, &inicedMyPoints);
+	initProject(allPoints, &myPoints, &myNumberOfPoints);
 
-	gatherPoints(allPoints, inicedMyPoints, myNumberOfPoints);
-	if (rank == MASTER) {
-		printIt(allPoints, N);
-	}
 	free(myPoints);
-	free(inicedMyPoints);
 	if (rank == MASTER)
 		free(allPoints);
 	mpiFinish();

@@ -1,10 +1,10 @@
 #include "MpiFunctions.h"
 
-void mpiInit(int *argc, char** argv[], int *rank, int *numprocs)
+void mpiInit(int *argc, char** argv[], int *rank, int *numberOfProcesses)
 {//Init MPI
 	MPI_Init(argc, argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, rank);
-	MPI_Comm_size(MPI_COMM_WORLD, numprocs);
+	MPI_Comm_size(MPI_COMM_WORLD, numberOfProcesses);
 }
 
 void commitMpiPointType()
@@ -26,9 +26,12 @@ void commitMpiPointType()
 
 }
 
-void broadcastDataDt(float *dt)
+void broadcastClusters(int rank, point_t** clusters, int *k)
 {
-	MPI_Bcast(dt, 1, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
+	MPI_Bcast(k, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
+	if (rank != MASTER)
+		*clusters = (point_t*)malloc((*k) * sizeof(point_t));
+	MPI_Bcast(*clusters, *k, PointMPIType, MASTER, MPI_COMM_WORLD);
 }
 
 void scatterPoints(point_t* allPoints, point_t** myPoints, int *numberOfPoints)
@@ -41,6 +44,11 @@ void scatterPoints(point_t* allPoints, point_t** myPoints, int *numberOfPoints)
 		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 	MPI_Scatter(allPoints, *numberOfPoints, PointMPIType, *myPoints, *numberOfPoints, PointMPIType, MASTER, MPI_COMM_WORLD);
+}
+
+void broadcastDT(float *dt)
+{
+	MPI_Bcast(dt, 1, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
 }
 
 point_t* gatherPoints(int rank, point_t* myPoints, int numberOfProcesses, int numberOfPointsToSend)

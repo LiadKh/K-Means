@@ -55,7 +55,7 @@ point_t* averageClusters(point_t* points, int numberOfPoints, int numberOfCluste
 		}
 #pragma omp single
 		{
-			result = combainPointsArrays(setOfK, numberOfThreads, numberOfCluster);
+			result = combainPointsArrays(*setOfK, numberOfThreads, numberOfCluster);
 		}
 
 		free(setOfK[tid]);
@@ -64,7 +64,7 @@ point_t* averageClusters(point_t* points, int numberOfPoints, int numberOfCluste
 	return result;
 }
 
-point_t* combainPointsArrays(point_t** points, int numberOfArrays, int pointsInArray)
+point_t* combainPointsArrays(point_t* points, int numberOfArrays, int pointsInArray)
 {
 	point_t * result = (point_t*)calloc(pointsInArray, sizeof(point_t));
 #pragma omp parallel for
@@ -72,10 +72,10 @@ point_t* combainPointsArrays(point_t** points, int numberOfArrays, int pointsInA
 	{
 		for (int j = 0; j < numberOfArrays; j++)
 		{
-			result[i].x += points[j][i].x;
-			result[i].y += points[j][i].y;
-			result[i].z += points[j][i].z;
-			result[i].cluster += points[j][i].cluster;
+			result[i].x += points[j * numberOfArrays *pointsInArray + i].x;
+			result[i].y += points[j * numberOfArrays *pointsInArray + i].y;
+			result[i].z += points[j * numberOfArrays *pointsInArray + i].z;
+			result[i].cluster += points[j * numberOfArrays *pointsInArray + i].cluster;
 		}
 	}
 }
