@@ -13,4 +13,5 @@ point_t* incPoints(point_t* points, int numberOfPoints, float dt)
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaDeviceReset failed!");
 	}
+	return inicedPoints;
 }

@@ -1,30 +1,31 @@
 #include "OmpFunctions.h"
 
-double distance2Points(point_t p1, point_t p2)
+float distance2Points(point_t p1, point_t p2)
 {
-	return sqrt(pow(p1.x + p2.x, 2) + pow(p1.y + p2.y, 2) + pow(p1.z + p2.z, 2));
+	return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2) + pow(p1.z - p2.z, 2));
 }
-
+#include <stdio.h>
 void setClosestCluster(point_t* points, int numberOfPoints, point_t* clusters, int numberOfCluster)
 {
 	int tid, numberOfThreads = omp_get_max_threads();
 	point_t **setOfK = (point_t**)malloc(numberOfThreads * sizeof(point_t*));
-	int *result = (int*)calloc(numberOfPoints, sizeof(int));
+
 #pragma omp parallel private(tid)
 	{
 		tid = omp_get_thread_num();//Thread id
 		setOfK[tid] = (point_t*)calloc(numberOfCluster, sizeof(point_t));
 		memcpy(setOfK[tid], clusters, numberOfCluster * sizeof(point_t));
+		
 #pragma omp for
 		for (int i = 0; i < numberOfPoints; i++)
 		{
-			double distance, temp;
+			float distance, temp;
 			for (int j = 0; j < numberOfCluster; j++)
 			{
 				temp = distance2Points(points[i], setOfK[tid][j]);
-				if (j = 0 || temp < distance)
+				if (j == 0 || temp < distance)
 				{
-					result[i] = j;
+					points[i].cluster = j;
 					distance = temp;
 				}
 			}
