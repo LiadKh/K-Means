@@ -11,5 +11,5 @@ void commitMpiPointType();
 void broadcastClusters(int rank, point_t** clusters, int *k);
 void scatterPoints(point_t* allPoints, point_t** myPoints, int *numberOfPoints);
 void broadcastDT(float *dt);
-point_t* gatherPoints(int rank, point_t* myPoints, int numberOfProcesses, int numberOfPointsToSend);
+point_t* gatherPoints(int rank, int numberOfProcesses, point_t* myPoints, int numberOfPointsToSend);
 void mpiFinish();

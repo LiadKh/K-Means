@@ -50,18 +50,18 @@ point_t* chooseK(point_t* points, int k)
 	return clusters;
 }
 
-void interaction(point_t* points, int numberOfPoints, point_t* clusters, int rank, int numberOfProcess, int k, float *dt)
+void interaction(int rank, int numberOfProcesses, point_t* points, int numberOfPoints, point_t* clusters, int k, float *dt)
 {
-	//broadcastDT(dt);
-	//point_t* inicedMyPoints = incPoints(points, numberOfPoints, *dt);
-	//setClosestCluster(points, numberOfPoints, clusters, k);
-	//point_t* newClusters = averageClusters(points, numberOfPoints, k);
-	//point_t* newClusters = gatherPoints(rank, points, numberOfProcess, numberOfPoints);
-
-
-	//if (rank == MASTER)
-	//{
-
-	//}
-	//need to calc the new centers
+	broadcastDT(dt);
+	point_t* inicedMyPoints = incPoints(points, numberOfPoints, *dt);
+	setClosestCluster(inicedMyPoints, numberOfPoints, clusters, k);
+	point_t* sumClustersArray = sumClusters(inicedMyPoints, numberOfPoints, k);
+	point_t* allSumClustersArrays = gatherPoints(rank, numberOfProcesses, sumClustersArray, k);
+	if (rank == MASTER)
+	{
+		point_t* newClusters = combainPointsArrays(allSumClustersArrays, numberOfProcesses, k);
+		averageClusters(newClusters, k);
+		free(allSumClustersArrays);
+	}
+	free(sumClustersArray);
 }

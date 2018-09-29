@@ -2,13 +2,16 @@
 
 void printIt(point_t* points, int size)
 {
-	printf("%d", size); fflush(stdout);
+	printf("%d\n", size); fflush(stdout);
 	for (int i = 0; i < size; i++)
 	{
-		printf("%3f ", points[i].x);
-		printf("%3f ", points[i].y);
-		printf("%3f ", points[i].z);
-		printf("%d ", points[i].cluster);
+		printf("%3f \t", points[i].x);
+		printf("%3f \t", points[i].y);
+		printf("%3f \t", points[i].z);
+		printf("%3f \t", points[i].vx);
+		printf("%3f \t", points[i].vy);
+		printf("%3f \t", points[i].vz);
+		printf("%d \t", points[i].cluster);
 		printf("\n"); fflush(stdout);
 	}
 }
@@ -28,12 +31,7 @@ int main(int argc, char* argv[])
 	}
 
 	initProject(rank, allPoints, &myPoints, &myNumberOfPoints, &clusters, &K);
-	setClosestCluster(myPoints, myNumberOfPoints, clusters, K);
-	if (rank == MASTER)
-		free(allPoints);
-	allPoints = gatherPoints(rank, myPoints, numberOfProcesses, myNumberOfPoints);
-	if (rank == MASTER)
-		printIt(allPoints, N);
+
 	free(clusters);
 	free(myPoints);
 	if (rank == MASTER)

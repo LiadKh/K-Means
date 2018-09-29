@@ -58,7 +58,7 @@ void broadcastDT(float *dt)
 	MPI_Bcast(dt, 1, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
 }
 
-point_t* gatherPoints(int rank, point_t* myPoints, int numberOfProcesses, int numberOfPointsToSend)
+point_t* gatherPoints(int rank, int numberOfProcesses, point_t* myPoints, int numberOfPointsToSend)
 {//Get points to master process
 	point_t *allPoints = NULL;
 	if (rank == MASTER)
