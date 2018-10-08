@@ -2,8 +2,8 @@
 
 point_t* incPoints(point_t* points, int numberOfPoints, float dt)
 {//Inic the points with dt time
-	point_t *inicedPoints = (point_t*)malloc(numberOfPoints * sizeof(point_t));
-	cudaError_t cudaStatus = incPointsWithCuda(points, numberOfPoints, dt, inicedPoints);// Inic points arr with dt time in parallel.
+	point_t *incPoints = (point_t*)malloc(numberOfPoints * sizeof(point_t));
+	cudaError_t cudaStatus = incPointsWithCuda(points, numberOfPoints, dt, incPoints);// Inic points arr with dt time in parallel.
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "inicDTWithCuda failed!");
 	}
@@ -13,5 +13,5 @@ point_t* incPoints(point_t* points, int numberOfPoints, float dt)
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaDeviceReset failed!");
 	}
-	return inicedPoints;
+	return incPoints;
 }

@@ -5,21 +5,22 @@
 #include <stdio.h>
 #include "Const.h"
 
-#define THREAD_IN_BLOCK 1024
+#define THREAD_IN_BLOCK 1000
+#define ONE_THREAD_WORK 1000
 
-__global__ void incKernel(point_t *inicedPoints, const point_t *points, float dT, int numberOfPoints)
+__global__ void incKernel(point_t *incPoints, const point_t *points, float dT, int numberOfPoints)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index < numberOfPoints)
 	{
-		inicedPoints[index].x = points[index].x + dT*points[index].vx;
-		inicedPoints[index].y = points[index].y + dT*points[index].vy;
-		inicedPoints[index].z = points[index].z + dT*points[index].vz;
+		incPoints[index].x = points[index].x + dT*points[index].vx;
+		incPoints[index].y = points[index].y + dT*points[index].vy;
+		incPoints[index].z = points[index].z + dT*points[index].vz;
 	}
 }
 
 // Helper function for using CUDA to add vectors in parallel.
-cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dT, point_t* inicedPoints)
+cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dT, point_t* incPoints)
 {
 	point_t *dev_points = 0;
 	point_t *dev_iniced_points = 0;
@@ -74,7 +75,7 @@ cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dT, poi
 	}
 
 	// Copy output vector from GPU buffer to host memory.
-	cudaStatus = cudaMemcpy(inicedPoints, dev_iniced_points, numberOfPoints * sizeof(point_t), cudaMemcpyDeviceToHost);
+	cudaStatus = cudaMemcpy(incPoints, dev_iniced_points, numberOfPoints * sizeof(point_t), cudaMemcpyDeviceToHost);
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaMemcpy failed!");
 		goto Error;

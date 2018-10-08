@@ -8,4 +8,4 @@
 #include <stdlib.h>
 
 point_t* incPoints(point_t* points, int numberOfPoints, float dt);
-cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dt, point_t* inicedPoints);
+cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dT, point_t* incPoints);
