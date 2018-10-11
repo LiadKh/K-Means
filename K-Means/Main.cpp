@@ -2,26 +2,27 @@
 
 int main(int argc, char* argv[])
 {
-	int rank, numberOfProcesses, N, K, T, LIMIT, myNumberOfPoints;
-	float dT, time, QM, q, n = 0;
+	int rank, numberOfProcesses, N, K, T, LIMIT, myNumberOfPoints, iterationNumber = 0;
+	float dT, time, QM, q;
+	bool anotherIteration, isMovedPoint = NULL;
 	point_t *allPoints, *myPoints, *clusters, *incPoints = NULL, *previousIncPoints = NULL;
-	bool anotherIteration;
-
-	initProcesses(&argc, &argv, &rank, &numberOfProcesses);
+	char input[INPUT_FILE_SIZE];
+	initProcesses(&argc, &argv, &rank, &numberOfProcesses, input);
 	if (rank == MASTER)
-		allPoints = readDataFile(INPUT_FILE, &N, &K, &T, &dT, &LIMIT, &QM);
+		allPoints = readDataFile(input, &N, &K, &T, &dT, &LIMIT, &QM);
 	initWork(rank, numberOfProcesses, allPoints, N, &myPoints, &myNumberOfPoints, &clusters, &K);
 	do
 	{
 		if (rank == MASTER)
-			time = n*dT;
+			time = iterationNumber*dT;
 		previousIncPoints = incPoints;
-		//newClusters = iteration()
+		iteration(rank, numberOfProcesses, myPoints, myNumberOfPoints, &clusters, K, time, previousIncPoints, &incPoints, &isMovedPoint, &q);
 		if (rank == MASTER)
 		{
-			anotherIteration = checkConditions(iterations, int LIMIT, int T, float dt, bool movedPoint, float QM, float q);
-			iterations++;
+			anotherIteration = checkConditions(iterationNumber, LIMIT, T, time, isMovedPoint, QM, q);//Check the termination condition
+			iterationNumber++;
 		}
+		MPI_Bcast(&anotherIteration, 1, MPI_C_BOOL, MASTER, MPI_COMM_WORLD);//MASTER send if there is more iteration
 		free(previousIncPoints);
 	} while (anotherIteration);
 	if (rank == MASTER)
@@ -29,7 +30,7 @@ int main(int argc, char* argv[])
 		writeToFile(time, q, clusters, K);
 		free(allPoints);
 	}
-	freeAllocations(2, myPoints, clusters, incPoints);
-	mpiFinish();
+	freeAllocations(2, myPoints, incPoints, clusters);
+	MPI_Finalize();
 	return EXIT_SUCCESS;
 }

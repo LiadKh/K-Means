@@ -3,6 +3,11 @@
 point_t* incPoints(point_t* points, int numberOfPoints, float dt)
 {//Inic the points with dt time
 	point_t *incPoints = (point_t*)malloc(numberOfPoints * sizeof(point_t));
+	if (incPoints == NULL)
+	{//Allocation problem
+		printf("Not enough memory. Exiting!\n"); fflush(stdout);
+		exit(EXIT_FAILURE);
+	}
 	cudaError_t cudaStatus = incPointsWithCuda(points, numberOfPoints, dt, incPoints);// Inic points arr with dt time in parallel.
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "inicDTWithCuda failed!");

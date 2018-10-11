@@ -9,11 +9,20 @@ void setClosestCluster(point_t* points, int numberOfPoints, point_t* clusters, i
 {//Find the closest cluster
 	int tid = NULL, numberOfThreads = omp_get_max_threads();
 	point_t **setOfK = (point_t**)malloc(numberOfThreads * sizeof(point_t*));
-
+	if (setOfK == NULL)
+	{//Allocation problem
+		printf("Not enough memory. Exiting!\n"); fflush(stdout);
+		exit(EXIT_FAILURE);
+	}
 #pragma omp parallel private(tid)
 	{
 		tid = omp_get_thread_num();//Thread id
 		setOfK[tid] = (point_t*)calloc(numberOfClusters, sizeof(point_t));//Each thread have array of k points - clusters
+		if (setOfK[tid] == NULL)
+		{//Allocation problem
+			printf("Not enough memory. Exiting!\n"); fflush(stdout);
+			exit(EXIT_FAILURE);
+		}
 		memcpy(setOfK[tid], clusters, numberOfClusters * sizeof(point_t));//Copy k clusters
 
 #pragma omp for
@@ -35,11 +44,15 @@ void setClosestCluster(point_t* points, int numberOfPoints, point_t* clusters, i
 	free(setOfK);
 }
 
-point_t* sumClusters(point_t* points, int numberOfPoints, int numberOfClusters)
+point_t* sumClusters(point_t* points, int numberOfPoints, int numberOfClusters, int *pointInCluster)
 {//Sum the points (x,y,z) in the same cluster
 	int tid = NULL, numberOfThreads = omp_get_max_threads();
 	point_t *result, *setOfK = (point_t*)calloc(numberOfThreads * numberOfClusters, sizeof(point_t));
-
+	if (setOfK == NULL)
+	{//Allocation problem
+		printf("Not enough memory. Exiting!\n"); fflush(stdout);
+		exit(EXIT_FAILURE);
+	}
 #pragma omp parallel private(tid)
 	{
 		tid = omp_get_thread_num();//Thread id
@@ -53,15 +66,19 @@ point_t* sumClusters(point_t* points, int numberOfPoints, int numberOfClusters)
 			setOfK[tid*numberOfClusters + cluster].cluster++;
 		}
 	}
-	result = combainPointsArrays(setOfK, numberOfThreads, numberOfClusters);
+	result = combainPointsArrays(setOfK, numberOfThreads, numberOfClusters, pointInCluster);
 	free(setOfK);
 	return result;
 }
 
-point_t* combainPointsArrays(point_t* points, int numberOfArrays, int pointsInArray)
+point_t* combainPointsArrays(point_t* points, int numberOfArrays, int pointsInArray, int *pointInCluster)
 {//Combain arrays of points (x,y,z) to one array - each array have the same number of points
 	point_t * result = (point_t*)calloc(pointsInArray, sizeof(point_t));
-
+	if (result == NULL)
+	{//Allocation problem
+		printf("Not enough memory. Exiting!\n"); fflush(stdout);
+		exit(EXIT_FAILURE);
+	}
 #pragma omp parallel for
 	for (int i = 0; i < pointsInArray; i++)
 	{
@@ -72,6 +89,8 @@ point_t* combainPointsArrays(point_t* points, int numberOfArrays, int pointsInAr
 			result[i].z += points[j*pointsInArray + i].z;
 			result[i].cluster += points[j*pointsInArray + i].cluster;
 		}
+		if (pointInCluster != NULL)
+			pointInCluster[i] = result[i].cluster;
 	}
 	return result;
 }
@@ -99,13 +118,20 @@ void setAverageToClusters(point_t* clusters, point_t* previousClusters, int numb
 
 bool isMovedPoint(point_t* p1, point_t* p2, int size)
 {//Check if point in p1 move to another cluster in p2
+	if (p1 == NULL || p2 == NULL)
+		return true;
 	int tid = NULL, numberOfThreads = omp_get_max_threads();
 	bool answer, *setAnswer = (bool*)malloc(numberOfThreads * sizeof(bool));
+	if (setAnswer == NULL)
+	{//Allocation problem
+		printf("Not enough memory. Exiting!\n"); fflush(stdout);
+		exit(EXIT_FAILURE);
+	}
 	memset(setAnswer, false, sizeof(setAnswer));
 #pragma omp parallel private(tid)
 	{
 		tid = omp_get_thread_num();//Thread id
-#pragma omp parallel for
+#pragma omp for
 		for (int i = 0; i < size; i++)
 		{
 			if (p1[i].cluster != p2[i].cluster)
@@ -123,4 +149,101 @@ bool checkArray(bool *arr, int size)
 		if (arr[i] == true)
 			return true;
 	return false;
+}
+//
+float biggestDistance(point_t* points, int numberOfPoints)
+{
+	int tid = NULL, numberOfThreads = omp_get_max_threads();
+	float dis = NULL, maxDistance;
+	point_t** setOfPoints = (point_t**)malloc(numberOfThreads * sizeof(point_t*));
+	if (setOfPoints == NULL)
+	{//Allocation problem
+		printf("Not enough memory. Exiting!\n"); fflush(stdout);
+		exit(EXIT_FAILURE);
+	}
+	float* distanceArray = (float*)calloc(numberOfThreads, sizeof(float));
+	if (distanceArray == NULL)
+	{//Allocation problem
+		printf("Not enough memory. Exiting!\n"); fflush(stdout);
+		exit(EXIT_FAILURE);
+	}
+#pragma omp parallel private(tid,dis)
+	{
+		tid = omp_get_thread_num();//Thread id
+		setOfPoints[tid] = (point_t*)malloc(numberOfPoints * sizeof(point_t));
+		if (setOfPoints[tid] == NULL)
+		{//Allocation problem
+			printf("Not enough memory. Exiting!\n"); fflush(stdout);
+			exit(EXIT_FAILURE);
+		}
+		memcpy(setOfPoints[tid], points, numberOfPoints * sizeof(point_t));
+#pragma omp for
+		for (int i = 0; i < numberOfPoints; i++)
+		{//Each thread find the max distance
+			for (int j = 0; j < numberOfPoints; j++)
+			{
+				dis = distancePoints(points[i], setOfPoints[tid][j]);
+				if (dis > distanceArray[tid])
+					distanceArray[tid] = dis;
+			}
+		}
+		free(setOfPoints[tid]);
+	}
+	free(setOfPoints);
+	for (int i = 0; i < numberOfThreads; i++)
+	{//Find the max distance
+		if (i == 0 || distanceArray[i] > maxDistance)
+			maxDistance = distanceArray[i];
+	}
+	free(distanceArray);
+	return maxDistance;
+}
+
+float findQ(float* maxDistance, point_t* clusters, int numberOfClusters)
+{
+	float q = 0, dis = NULL;
+	int tid = NULL, numberOfThreads = omp_get_max_threads();
+	point_t** setOfClusters = (point_t**)malloc(numberOfThreads * sizeof(point_t*));
+	if (setOfClusters == NULL)
+	{//Allocation problem
+		printf("Not enough memory. Exiting!\n"); fflush(stdout);
+		exit(EXIT_FAILURE);
+	}
+	float* distanceArray = (float*)calloc(numberOfThreads, sizeof(float));
+	if (distanceArray == NULL)
+	{//Allocation problem
+		printf("Not enough memory. Exiting!\n"); fflush(stdout);
+		exit(EXIT_FAILURE);
+	}
+#pragma omp parallel private(tid,dis)
+	{
+		tid = omp_get_thread_num();//Thread id
+		setOfClusters[tid] = (point_t*)malloc(numberOfClusters * sizeof(point_t));
+		if (setOfClusters[tid] == NULL)
+		{//Allocation problem
+			printf("Not enough memory. Exiting!\n"); fflush(stdout);
+			exit(EXIT_FAILURE);
+		}
+		memcpy(setOfClusters[tid], clusters, numberOfClusters * sizeof(point_t));
+#pragma omp for
+		for (int i = 0; i < numberOfClusters; i++)
+		{
+			for (int j = 0; j < numberOfClusters; j++)
+			{
+				if (i != j)
+				{
+					dis = distancePoints(setOfClusters[tid][i], setOfClusters[tid][j]);
+					if (dis != 0)
+						distanceArray[tid] = distanceArray[tid] + maxDistance[i] / dis;
+				}
+			}
+		}
+		free(setOfClusters[tid]);
+	}
+	free(setOfClusters);
+	for (int i = 0; i < numberOfThreads; i++)
+		q += distanceArray[i];
+	free(distanceArray);
+	q = q / numberOfClusters;
+	return q;
 }

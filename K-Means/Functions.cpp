@@ -1,5 +1,19 @@
 #include "Functions.h"
 
+void initProcesses(int *argc, char** argv[], int *rank, int *numberOfProcesses, char* input)
+{//Init MPI
+	mpiInit(argc, argv, rank, numberOfProcesses);
+	commitMpiPointType();//Commit to MPI point type
+	if (*rank == MASTER)
+	{
+		if (*argc != 2) {
+			printf("Please run the program with full path of the file\n"); fflush(stdout);
+			MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+		memcpy(input, (*argv)[1], strlen((*argv)[1]) + 1);
+	}
+}
+
 point_t* readDataFile(char* fname, int *N, int* K, int* T, float* dT, int* LIMIT, float* QM)
 {//Read data from file
 	point_t* points;
@@ -27,6 +41,144 @@ point_t* readDataFile(char* fname, int *N, int* K, int* T, float* dT, int* LIMIT
 	return points;
 }
 
+void initWork(int rank, int numberOfProcesses, point_t *allPoints, int N, point_t **myPoints, int *myNumberOfPoints, point_t **clusters, int *k)
+{//Start every process with points and allocate memory for clusters
+	MPI_Bcast(k, 1, MPI_INT, MASTER, MPI_COMM_WORLD);//Broadcast number of clusters to send
+	*clusters = (point_t*)malloc((*k) * sizeof(point_t));//Allocate number of clusters points
+	if (*clusters == NULL)//Allocation problem
+	{
+		printf("Not enough memory. Exiting!\n"); fflush(stdout);
+		exit(EXIT_FAILURE);
+	}
+	if (rank == MASTER)
+		memcpy(*clusters, allPoints, (*k) * sizeof(point_t)); //Copy first k to be clusters
+	scatterPoints(rank, numberOfProcesses, allPoints, N, myPoints, myNumberOfPoints);//Init process with The points that belong to him
+}
+
+point_t* getNewClusters(int rank, int numberOfProcesses, point_t* points, int numberOfPoints, point_t* oldClusters, int numberOfClusters, int **pointInCluster)
+{//Find new clusters
+	point_t* newClusters = NULL;
+	*pointInCluster = (int*)calloc(numberOfClusters, sizeof(int));
+	point_t* sumClustersArray = sumClusters(points, numberOfPoints, numberOfClusters, *pointInCluster);//Sum the points x,y,z in each cluster
+	point_t* allSumClustersArrays = gatherPoints(rank, numberOfProcesses, sumClustersArray, numberOfClusters);
+	if (rank == MASTER)
+	{
+		newClusters = combainPointsArrays(allSumClustersArrays, numberOfProcesses, numberOfClusters, NULL);//Combain clusters arrays to one array
+		setAverageToClusters(newClusters, oldClusters, numberOfClusters);
+	}
+	free(allSumClustersArrays);
+	free(sumClustersArray);
+	return newClusters;
+}
+
+bool checkMovedPoint(int rank, int numberOfProcesses, point_t* p1, point_t* p2, int numberOfPoints)
+{//Check if there is point that moved to another cluster
+	bool isMoved = isMovedPoint(p1, p2, numberOfPoints);
+	bool* isMovedArray = gatherBool(rank, numberOfProcesses, isMoved);
+	if (rank == MASTER)
+		isMoved = checkArray(isMovedArray, numberOfProcesses);
+	free(isMovedArray);
+	return isMoved;
+}
+
+point_t** setPointsInCluster(point_t* points, int numberOfPoints, int numberOfClusters, int *pointsInClusters)
+{//Set of cluster - each cluster array contains the point in the cluster
+	int *counterPointInArray = (int*)calloc(numberOfClusters, sizeof(int));//Count point in the cluster
+	if (counterPointInArray == NULL)//Allocation problem
+	{
+		printf("Not enough memory. Exiting!\n"); fflush(stdout);
+		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	point_t **setArray = (point_t**)malloc(numberOfClusters * sizeof(point_t*));
+	if (setArray == NULL)//Allocation problem
+	{
+		printf("Not enough memory. Exiting!\n"); fflush(stdout);
+		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	int cluster;
+
+	for (int i = 0; i < numberOfClusters; i++)
+	{
+		setArray[i] = (point_t*)malloc(pointsInClusters[i] * sizeof(point_t));
+		if (setArray[i] == NULL)//Allocation problem
+		{
+			printf("Not enough memory. Exiting!\n"); fflush(stdout);
+			MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		}
+	}
+	for (int i = 0; i < numberOfPoints; i++)
+	{
+		cluster = points[i].cluster;
+		memcpy(&(setArray[cluster][counterPointInArray[cluster]]), &(points[i]), sizeof(point_t));
+		counterPointInArray[cluster]++;
+	}
+	free(counterPointInArray);
+	return setArray;
+}
+
+float calucQ(int rank, int numberOfProcesses, point_t* points, int numberOfPoints, point_t* clusters, int numberOfClusters, int *numberOfPointsInCluster)
+{//Calculate quality measure
+	float q = NULL, *biggestDistanceArray;
+	point_t** pointsInCluster = setPointsInCluster(points, numberOfPoints, numberOfClusters, numberOfPointsInCluster);//Set points in there cluster array
+	if (pointsInCluster == NULL)//Allocation problem
+	{
+		printf("Not enough memory. Exiting!\n"); fflush(stdout);
+		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+	}
+	
+	collectPointsInClusters(rank, numberOfProcesses, numberOfClusters, pointsInCluster, numberOfPointsInCluster);//Sent the point to MASTER - each point in the custom array (cluster array)
+	if (rank == MASTER)
+	{//MASTER send points
+		biggestDistanceArray = sendArrayOfPointInCluster(numberOfProcesses, pointsInCluster, numberOfPointsInCluster, numberOfClusters);
+		q = findQ(biggestDistanceArray, clusters, numberOfClusters);
+		free(biggestDistanceArray);
+	}
+	else
+	{//Slave get points to find the biggest distance
+		int workSize, clusterId;
+		point_t* work;
+		do {
+			work = receiveArrayOfPointInCluster(&workSize, &clusterId, &q);
+			q = biggestDistance(work, workSize);
+			free(work);
+		} while (q != NULL);
+	}
+	for (int i = 0; i < numberOfClusters; i++)
+		free(pointsInCluster[i]);
+	free(pointsInCluster);
+	return q;
+}
+
+void iteration(int rank, int numberOfProcesses, point_t* points, int numberOfPoints, point_t** clusters, int k, float dt, point_t* oldPoints, point_t** incedPoints, bool *isMovedPoint, float *q)
+{
+	point_t* newClusters = NULL;
+	int *pointInCluster;
+	broadcastIterationData(clusters, k, &dt);
+	*incedPoints = incPoints(points, numberOfPoints, dt);//Calculate increased points
+	setClosestCluster(*incedPoints, numberOfPoints, *clusters, k);//Set closet cluster to each point
+	newClusters = getNewClusters(rank, numberOfProcesses, *incedPoints, numberOfPoints, *clusters, k, &pointInCluster);//Get the new clusters
+	*isMovedPoint = checkMovedPoint(rank, numberOfProcesses, *incedPoints, oldPoints, numberOfPoints);//If there is point that moved to another cluster
+	*q = calucQ(rank, numberOfProcesses, *incedPoints, numberOfPoints, newClusters, k, pointInCluster);//Calculate quality measure
+	if (rank == MASTER)
+		memcpy(*clusters, newClusters, k * sizeof(point_t));
+	freeAllocations(2, newClusters, pointInCluster);
+}
+
+bool checkConditions(int iterations, int LIMIT, int T, float time, bool movedPoint, float QM, float q)
+{//Check termination condition
+	if (iterations == 0)//Check first iteration
+		return true;
+	if (iterations >= LIMIT)//Check maximum number of iterations
+		return false;
+	if (time >= T)//Check end of time interval 
+		return false;
+	if (!movedPoint)//Check no point move to another cluster
+		return false;
+	if (q <= QM)//Check quality measure to stop
+		return false;
+	return true;
+}
+
 void writeToFile(float t, float q, point_t *clusters, int k)
 {//Write project output
 	FILE* f = fopen(OUTPUT_FILE, "w");
@@ -42,102 +194,11 @@ void writeToFile(float t, float q, point_t *clusters, int k)
 	printf("Thanks for your use!!! Exiting.\n"); fflush(stdout);
 }
 
-void initProcesses(int *argc, char** argv[], int *rank, int *numberOfProcesses)
-{//Init MPI
-	mpiInit(argc, argv, rank, numberOfProcesses);
-	commitMpiPointType();//Commit to MPI point type
-}
-
-void initWork(int rank, int numberOfProcesses, point_t *allPoints, int N, point_t **myPoints, int *myNumberOfPoints, point_t **clusters, int *k)
-{//Start every process with all clusters and scatter points to work
-	if (rank == MASTER)
-		*clusters = chooseFirstClusters(allPoints, *k);// Choose first k point to be clusters
-	broadcastClusters(rank, clusters, k);
-	scatterPoints(rank, numberOfProcesses, allPoints, N, myPoints, myNumberOfPoints);
-}
-
-point_t* chooseFirstClusters(point_t* points, int numberOfClusters)
-{//Return copy of first k to be clusters
-	point_t* clusters = (point_t*)malloc(numberOfClusters * sizeof(point_t));
-	memcpy(clusters, points, numberOfClusters * sizeof(point_t));
-	return clusters;
-}
-
-point_t* getNewClusters(int rank, int numberOfProcesses, point_t* points, int numberOfPoints, int numberOfClusters)
-{//Find new clusters
-	point_t* newClusters = NULL;
-	point_t* sumClustersArray = sumClusters(points, numberOfPoints, numberOfClusters);//Sum the points x,y,z in each cluster
-	point_t* allSumClustersArrays = gatherPoints(rank, numberOfProcesses, sumClustersArray, numberOfClusters);
-	if (rank == MASTER)
-	{
-		newClusters = combainPointsArrays(allSumClustersArrays, numberOfProcesses, numberOfClusters);//Combain clusters arrays to one array
-		setAverageToClusters(newClusters, numberOfClusters);
-		free(allSumClustersArrays);
-	}
-	free(sumClustersArray);
-	return newClusters;
-}
-
-bool checkMovedPoint(int rank, int numberOfProcesses, point_t* p1, point_t* p2, int numberOfPoints)
-{//Check if there is point that moved to another cluster
-	bool isMoved = isMovedPoint(p1, p2, numberOfPoints);
-	bool* isMovedArray = gatherBool(rank, numberOfProcesses, isMoved);
-	if (rank == MASTER)
-	{
-		isMoved = checkArray(isMovedArray, numberOfProcesses);
-		free(isMovedArray);
-	}
-	return isMoved;
-}
-
-point_t* iteration(int rank, int numberOfProcesses, point_t* points, int numberOfPoints, point_t* clusters, int k, float *dt, point_t* oldPoints, point_t** incedPoints, float *q)
-{
-	point_t* newClusters = NULL;
-	broadcastDT(dt);//Broadcast dt to this iteration
-	*incedPoints = incPoints(points, numberOfPoints, *dt);//Calculate increased points
-	setClosestCluster(*incedPoints, numberOfPoints, clusters, k);//Set closet cluster to each point
-	newClusters = getNewClusters(rank, numberOfProcesses, *incedPoints, numberOfPoints, k);//Get the new clusters
-	bool isMoved = checkMovedPoint(rank, numberOfProcesses, *incedPoints, oldPoints, numberOfPoints);//If there is point that moved to another cluster
-	return newClusters;
-}
-
-bool checkConditions(int iterations, int LIMIT, int T, float dt, bool movedPoint, float QM, float q)
-{
-	if (iterations == 0)//Cheack first iteration
-		return true;
-	if (iterations >= LIMIT)//Cheack maximum number of iterations
-		return false;
-	if (iterations*dt >= T)//Cheack end of time interval 
-		return false;
-	if (!movedPoint)//Cheack no point move to another cluster
-		return false;
-	if (q <= QM)//Cheack quality measure to stop
-		return false;
-	return true;
-}
-
-void freeAllocations(int count, ...) 
+void freeAllocations(int count, ...)
 {//Free allocations
 	va_list list;
 	va_start(list, count);
 	for (int i = 0; i < count; i++)
-		free(*(va_arg(list, int**)));
+		free(va_arg(list, point_t*));
 	va_end(list);
-}
-
-
-void printIt(point_t* points, int size)
-{
-	printf("%d\n", size); fflush(stdout);
-	for (int i = 0; i < size; i++)
-	{
-		printf("%3f \t", points[i].x);
-		printf("%3f \t", points[i].y);
-		printf("%3f \t", points[i].z);
-		printf("%3f \t", points[i].vx);
-		printf("%3f \t", points[i].vy);
-		printf("%3f \t", points[i].vz);
-		printf("%d \t", points[i].cluster);
-		printf("\n"); fflush(stdout);
-	}
 }
