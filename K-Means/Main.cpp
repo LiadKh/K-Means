@@ -1,12 +1,15 @@
 #include "Functions.h"
+#include <time.h>
 
 int main(int argc, char* argv[])
 {
+	clock_t start = clock(), end;
 	int rank, numberOfProcesses, N, K, T, LIMIT, myNumberOfPoints, iterationNumber = 0;
 	float dT, time, QM, q;
 	bool anotherIteration, isMovedPoint = NULL;
 	point_t *allPoints, *myPoints, *clusters, *incPoints = NULL, *previousIncPoints = NULL;
 	char input[INPUT_FILE_SIZE];
+
 	initProcesses(&argc, &argv, &rank, &numberOfProcesses, input);
 	if (rank == MASTER)
 		allPoints = readDataFile(input, &N, &K, &T, &dT, &LIMIT, &QM);
@@ -21,12 +24,15 @@ int main(int argc, char* argv[])
 		{
 			anotherIteration = checkConditions(iterationNumber, LIMIT, T, time, isMovedPoint, QM, q);//Check the termination condition
 			iterationNumber++;
+			printf("Iteration: %d\n", iterationNumber); fflush(stdout);
 		}
 		MPI_Bcast(&anotherIteration, 1, MPI_C_BOOL, MASTER, MPI_COMM_WORLD);//MASTER send if there is more iteration
 		free(previousIncPoints);
 	} while (anotherIteration);
 	if (rank == MASTER)
 	{//Write result to file
+		end = clock();
+		printf("Work time %f\n", (double)(end - start)); fflush(stdout);
 		writeToFile(time, q, clusters, K);
 		free(allPoints);
 	}

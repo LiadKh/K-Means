@@ -168,9 +168,9 @@ bool checkConditions(int iterations, int LIMIT, int T, float time, bool movedPoi
 {//Check termination condition
 	if (iterations == 0)//Check first iteration
 		return true;
-	if (iterations >= LIMIT)//Check maximum number of iterations
+	if (iterations > LIMIT)//Check maximum number of iterations
 		return false;
-	if (time >= T)//Check end of time interval 
+	if (time > T)//Check end of time interval 
 		return false;
 	if (!movedPoint)//Check no point move to another cluster
 		return false;
