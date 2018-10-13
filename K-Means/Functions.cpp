@@ -120,15 +120,26 @@ float calucQ(int rank, int numberOfProcesses, point_t* points, int numberOfPoint
 {//Calculate quality measure
 	float q = NULL, *biggestDistanceArray;
 	point_t** pointsInCluster = setPointsInCluster(points, numberOfPoints, numberOfClusters, numberOfPointsInCluster);//Set points in there cluster array
+
 	if (pointsInCluster == NULL)//Allocation problem
 	{
 		printf("Not enough memory. Exiting!\n"); fflush(stdout);
 		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
-	
 	collectPointsInClusters(rank, numberOfProcesses, numberOfClusters, pointsInCluster, numberOfPointsInCluster);//Sent the point to MASTER - each point in the custom array (cluster array)
 	if (rank == MASTER)
 	{//MASTER send points
+		for (int i = 0; i < numberOfClusters; i++)//Add new cluster as a point in the array
+		{
+			pointsInCluster[i] = (point_t*)realloc(pointsInCluster[i], (numberOfPointsInCluster[i] + 1) * sizeof(point_t));
+			if (pointsInCluster[i] == NULL)//Allocation problem
+			{
+				printf("Not enough memory. Exiting!\n"); fflush(stdout);
+				MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+			}
+			memcpy(&(pointsInCluster[i][numberOfPointsInCluster[i]]), &(clusters[i]), sizeof(point_t));
+			numberOfPointsInCluster[i]++;
+		}
 		biggestDistanceArray = sendArrayOfPointInCluster(numberOfProcesses, pointsInCluster, numberOfPointsInCluster, numberOfClusters);
 		q = findQ(biggestDistanceArray, clusters, numberOfClusters);
 		free(biggestDistanceArray);
@@ -136,12 +147,19 @@ float calucQ(int rank, int numberOfProcesses, point_t* points, int numberOfPoint
 	else
 	{//Slave get points to find the biggest distance
 		int workSize, clusterId;
+		bool found = false;
 		point_t* work;
 		do {
-			work = receiveArrayOfPointInCluster(&workSize, &clusterId, &q);
-			q = biggestDistance(work, workSize);
-			free(work);
-		} while (q != NULL);
+			work = receiveArrayOfPointInCluster(&workSize, &clusterId, q, found);
+			if (work != NULL)
+			{
+				found = true;
+				q = biggestDistance(work, workSize);
+				free(work);
+			}
+			else
+				break;
+		} while (true);
 	}
 	for (int i = 0; i < numberOfClusters; i++)
 		free(pointsInCluster[i]);

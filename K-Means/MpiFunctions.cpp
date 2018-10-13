@@ -113,13 +113,13 @@ void collectPointsInClusters(int rank, int numberOfProcesses, int numberOfCluste
 {//Send the points from all the processes to the MASTER
 	MPI_Status status;
 	int numberOfPointToSent;
+
 	for (int i = 0; i < numberOfClusters; i++)
 	{
 		if (rank != numberOfProcesses - 1)
 		{//Get data
-
 			MPI_Recv(&numberOfPointToSent, 1, MPI_INT, rank + 1, i, MPI_COMM_WORLD, &status);//Number of point to send
-			if (pointsInClusters[i] != 0)
+			if (numberOfPointToSent != 0)
 			{
 				points[i] = (point_t*)realloc(points[i], (pointsInClusters[i] + numberOfPointToSent) * sizeof(point_t));
 				if (points[i] == NULL)
@@ -143,31 +143,35 @@ void collectPointsInClusters(int rank, int numberOfProcesses, int numberOfCluste
 float* sendArrayOfPointInCluster(int numberOfProcesses, point_t** pointsInClusters, int* numberOfPointInClusters, int numberOfClusters)
 {//MASTER send point in clusters
 	MPI_Status status;
-	int i = 0, workProcesses;
+	int i = 0, workProcesses = 0;
 	float temp;
 	float *calculatedDistance = (float*)calloc(numberOfClusters, sizeof(float));
+
 	if (calculatedDistance == NULL)//Allocation problem
 	{
 		printf("Not enough memory. Exiting!\n"); fflush(stdout);
 		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
-	for (; i < numberOfClusters && i < numberOfProcesses - 1; i++)
+	for (; i < numberOfClusters && workProcesses < numberOfProcesses - 1; i++)
 	{//Send first job
-		if (pointsInClusters[i] != 0)
+		if (numberOfPointInClusters[i] > 1)
 		{
 			MPI_Send(&(numberOfPointInClusters[i]), 1, MPI_INT, i + 1, i, MPI_COMM_WORLD);//Number of point to send
 			MPI_Send(pointsInClusters[i], numberOfPointInClusters[i], PointMPIType, i + 1, i, MPI_COMM_WORLD);//Send point
+			workProcesses++;
 		}
 	}
-	workProcesses = i;
 	for (int j = workProcesses; j < numberOfProcesses - 1; j++)//more procsses than clusters
 		MPI_Send(&j, 1, MPI_INT, j + 1, FINISH_WORK_TAG, MPI_COMM_WORLD);//Stop process - no more work
 	for (; i < numberOfClusters; i++)
 	{
-		MPI_Recv(&temp, 1, MPI_FLOAT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);//Receive result 
-		calculatedDistance[status.MPI_TAG] = temp;
-		MPI_Send(&(numberOfPointInClusters[i]), 1, MPI_INT, status.MPI_SOURCE, i, MPI_COMM_WORLD);//Number of point to send
-		MPI_Send(pointsInClusters[i], numberOfPointInClusters[i], PointMPIType, status.MPI_SOURCE, i, MPI_COMM_WORLD);//Send point
+		if (numberOfPointInClusters[i] > 1)
+		{
+			MPI_Recv(&temp, 1, MPI_FLOAT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);//Receive result 
+			calculatedDistance[status.MPI_TAG] = temp;
+			MPI_Send(&(numberOfPointInClusters[i]), 1, MPI_INT, status.MPI_SOURCE, i, MPI_COMM_WORLD);//Number of point to send
+			MPI_Send(pointsInClusters[i], numberOfPointInClusters[i], PointMPIType, status.MPI_SOURCE, i, MPI_COMM_WORLD);//Send point
+		}
 	}
 	for (i = 0; i < workProcesses; i++)
 	{
@@ -178,13 +182,13 @@ float* sendArrayOfPointInCluster(int numberOfProcesses, point_t** pointsInCluste
 	return calculatedDistance;
 }
 
-point_t* receiveArrayOfPointInCluster(int *workSize, int *clusterId, float* found)
+point_t* receiveArrayOfPointInCluster(int *workSize, int *clusterId, float distance, bool found)
 {//Slave get points to work from MASTER
 	point_t* result = NULL;
 	MPI_Status status;
 
-	if (*found != NULL)
-		MPI_Send(found, 1, MPI_FLOAT, MASTER, *clusterId, MPI_COMM_WORLD);//Send result
+	if (found == true)// Not first iteration
+		MPI_Send(&distance, 1, MPI_FLOAT, MASTER, *clusterId, MPI_COMM_WORLD);//Send result
 	MPI_Recv(workSize, 1, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &status);//Number of point to receive
 	if (status.MPI_TAG != FINISH_WORK_TAG)
 	{

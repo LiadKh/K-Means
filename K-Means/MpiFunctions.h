@@ -17,4 +17,4 @@ point_t* gatherPoints(int rank, int numberOfProcesses, point_t* myPoints, int nu
 bool* gatherBool(int rank, int numberOfProcesses, bool check);
 void collectPointsInClusters(int rank, int numberOfProcesses, int numberOfClusters, point_t** points, int *pointsInClusters);
 float* sendArrayOfPointInCluster(int numberOfProcesses, point_t** pointsInClusters, int* numberOfPointInClusters, int numberOfClusters);
-point_t* receiveArrayOfPointInCluster(int *workSize, int *clusterId, float* found);
+point_t* receiveArrayOfPointInCluster(int *workSize, int *clusterId, float distance, bool found);

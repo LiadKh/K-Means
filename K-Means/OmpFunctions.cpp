@@ -215,6 +215,7 @@ float findQ(float* maxDistance, point_t* clusters, int numberOfClusters)
 		printf("Not enough memory. Exiting!\n"); fflush(stdout);
 		exit(EXIT_FAILURE);
 	}
+
 #pragma omp parallel private(tid,dis)
 	{
 		tid = omp_get_thread_num();//Thread id
@@ -244,6 +245,6 @@ float findQ(float* maxDistance, point_t* clusters, int numberOfClusters)
 	for (int i = 0; i < numberOfThreads; i++)
 		q += distanceArray[i];
 	free(distanceArray);
-	q = q / numberOfClusters;
+	q = q / (numberOfClusters*(numberOfClusters - 1));
 	return q;
 }
