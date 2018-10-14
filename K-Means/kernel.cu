@@ -53,11 +53,8 @@ cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dT, poi
 		goto Error;
 	}
 
-	int numberOfBlock = numberOfPoints / THREAD_IN_BLOCK + 1;
-	if (numberOfPoints % THREAD_IN_BLOCK != 0)
-		numberOfBlock++;
 	// Launch a kernel on the GPU with one thread for each element.
-	incKernel << <numberOfBlock, THREAD_IN_BLOCK >> > (dev_iniced_points, dev_points, dT, numberOfPoints);
+	incKernel << <numberOfPoints / THREAD_IN_BLOCK + 1, THREAD_IN_BLOCK >> > (dev_iniced_points, dev_points, dT, numberOfPoints);
 
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();

@@ -167,6 +167,7 @@ float biggestDistance(point_t* points, int numberOfPoints)
 		printf("Not enough memory. Exiting!\n"); fflush(stdout);
 		exit(EXIT_FAILURE);
 	}
+
 #pragma omp parallel private(tid,dis)
 	{
 		tid = omp_get_thread_num();//Thread id
@@ -180,7 +181,7 @@ float biggestDistance(point_t* points, int numberOfPoints)
 #pragma omp for
 		for (int i = 0; i < numberOfPoints; i++)
 		{//Each thread find the max distance
-			for (int j = 0; j < numberOfPoints; j++)
+			for (int j = i + 1; j < numberOfPoints; j++)
 			{
 				dis = distancePoints(points[i], setOfPoints[tid][j]);
 				if (dis > distanceArray[tid])

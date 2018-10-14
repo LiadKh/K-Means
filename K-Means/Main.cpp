@@ -1,5 +1,4 @@
 #include "Functions.h"
-#include <time.h>
 
 int main(int argc, char* argv[])
 {
@@ -24,7 +23,6 @@ int main(int argc, char* argv[])
 		{
 			anotherIteration = checkConditions(iterationNumber, LIMIT, T, time, isMovedPoint, QM, q);//Check the termination condition
 			iterationNumber++;
-			printf("Iteration: %d\n", iterationNumber); fflush(stdout);
 		}
 		MPI_Bcast(&anotherIteration, 1, MPI_C_BOOL, MASTER, MPI_COMM_WORLD);//MASTER send if there is more iteration
 		free(previousIncPoints);

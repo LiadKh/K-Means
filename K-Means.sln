@@ -5,6 +5,8 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "K-Means", "K-Means\K-Means.vcxproj", "{1557A7FE-2C54-4506-9CDD-F652223BD50D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CreateTestInput", "CreateTestInput\CreateTestInput.vcxproj", "{BD74BC60-AA8B-4A45-8C83-7B5476931E8F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{1557A7FE-2C54-4506-9CDD-F652223BD50D}.Release|x64.Build.0 = Release|x64
 		{1557A7FE-2C54-4506-9CDD-F652223BD50D}.Release|x86.ActiveCfg = Release|Win32
 		{1557A7FE-2C54-4506-9CDD-F652223BD50D}.Release|x86.Build.0 = Release|Win32
+		{BD74BC60-AA8B-4A45-8C83-7B5476931E8F}.Debug|x64.ActiveCfg = Debug|x64
+		{BD74BC60-AA8B-4A45-8C83-7B5476931E8F}.Debug|x64.Build.0 = Debug|x64
+		{BD74BC60-AA8B-4A45-8C83-7B5476931E8F}.Debug|x86.ActiveCfg = Debug|Win32
+		{BD74BC60-AA8B-4A45-8C83-7B5476931E8F}.Debug|x86.Build.0 = Debug|Win32
+		{BD74BC60-AA8B-4A45-8C83-7B5476931E8F}.Release|x64.ActiveCfg = Release|x64
+		{BD74BC60-AA8B-4A45-8C83-7B5476931E8F}.Release|x64.Build.0 = Release|x64
+		{BD74BC60-AA8B-4A45-8C83-7B5476931E8F}.Release|x86.ActiveCfg = Release|Win32
+		{BD74BC60-AA8B-4A45-8C83-7B5476931E8F}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
