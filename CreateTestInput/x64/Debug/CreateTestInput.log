@@ -1,3 +1,4 @@
 ﻿  Main.cpp
+d:\projects\visual studio\parallel and distributed computing - final project\k-means\createtestinput\main.cpp(45): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
   CreateTestInput.vcxproj -> D:\Projects\Visual studio\Parallel and Distributed Computing - Final Project\K-Means\x64\Debug\CreateTestInput.exe
   CreateTestInput.vcxproj -> D:\Projects\Visual studio\Parallel and Distributed Computing - Final Project\K-Means\x64\Debug\CreateTestInput.pdb (Partial PDB)

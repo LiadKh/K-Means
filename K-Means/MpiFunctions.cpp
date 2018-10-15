@@ -5,9 +5,9 @@ void mpiInit(int *argc, char** argv[], int *rank, int *numberOfProcesses)
 	MPI_Init(argc, argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, rank);
 	MPI_Comm_size(MPI_COMM_WORLD, numberOfProcesses);
-	if (*numberOfProcesses != 2)
+	if (*numberOfProcesses < 2)
 	{
-		printf("Run with 2 processes ot more. Exiting!\n"); fflush(stdout);
+		printf("Run with 2 processes or more. Exiting!\n"); fflush(stdout);
 		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 }

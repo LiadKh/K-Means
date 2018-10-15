@@ -7,7 +7,7 @@ void initProcesses(int *argc, char** argv[], int *rank, int *numberOfProcesses, 
 	if (*rank == MASTER)
 	{
 		if (*argc != 2) {
-			printf("Please run the program with full path of the file\n"); fflush(stdout);
+			printf("Please run the program with full path of the input file\n"); fflush(stdout);
 			MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
 		memcpy(input, (*argv)[1], strlen((*argv)[1]) + 1);
@@ -83,6 +83,7 @@ bool checkMovedPoint(int rank, int numberOfProcesses, point_t* p1, point_t* p2, 
 
 point_t** setPointsInCluster(point_t* points, int numberOfPoints, int numberOfClusters, int *pointsInClusters)
 {//Set of cluster - each cluster array contains the point in the cluster
+	int cluster;
 	int *counterPointInArray = (int*)calloc(numberOfClusters, sizeof(int));//Count point in the cluster
 	if (counterPointInArray == NULL)//Allocation problem
 	{
@@ -95,7 +96,6 @@ point_t** setPointsInCluster(point_t* points, int numberOfPoints, int numberOfCl
 		printf("Not enough memory. Exiting!\n"); fflush(stdout);
 		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
-	int cluster;
 
 	for (int i = 0; i < numberOfClusters; i++)
 	{

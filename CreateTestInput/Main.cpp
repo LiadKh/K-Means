@@ -4,12 +4,12 @@
 
 #pragma warning (disable : 4996)
 
-#define NUMBER_OF_POINTS 11 //3000000
-#define NUMBER_OF_CLUSTER 3
+#define NUMBER_OF_POINTS 1000 //3000000
+#define NUMBER_OF_CLUSTER 20
 #define TIME_INTERVAL 30
 #define dT 0.1
 #define LIMIT_ITERATION 50
-#define QM 6.1
+#define QM 1.0
 #define OUTPUT "input.txt"
 
 float randomIntNumber(float Min, float Max)
@@ -42,12 +42,12 @@ int main(int argc, const char* argv[])
 	{
 		for (int j = 0; j < 3; j++)
 		{
-			r = getRandom(-100, 100);
+			r = getRandom(-i, i);
 			fprintf(f, "%f ", r);
 		}
 		for (int j = 0; j < 3; j++)
 		{
-			r = getRandom(-6, 6);
+			r = getRandom(-1, 1);
 			fprintf(f, "%f ", r);
 		}
 		fprintf(f, "\n");

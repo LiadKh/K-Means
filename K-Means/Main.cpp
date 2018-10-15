@@ -2,7 +2,7 @@
 
 int main(int argc, char* argv[])
 {
-	clock_t start = clock(), end;
+	clock_t start, end;
 	int rank, numberOfProcesses, N, K, T, LIMIT, myNumberOfPoints, iterationNumber = 0;
 	float dT, time, QM, q;
 	bool anotherIteration, isMovedPoint = NULL;
@@ -11,7 +11,10 @@ int main(int argc, char* argv[])
 
 	initProcesses(&argc, &argv, &rank, &numberOfProcesses, input);
 	if (rank == MASTER)
+	{
 		allPoints = readDataFile(input, &N, &K, &T, &dT, &LIMIT, &QM);
+		start = clock();
+	}
 	initWork(rank, numberOfProcesses, allPoints, N, &myPoints, &myNumberOfPoints, &clusters, &K);
 	do
 	{
@@ -23,6 +26,7 @@ int main(int argc, char* argv[])
 		{
 			anotherIteration = checkConditions(iterationNumber, LIMIT, T, time, isMovedPoint, QM, q);//Check the termination condition
 			iterationNumber++;
+			printf("Iteration: %d\n", iterationNumber); fflush(stdout);
 		}
 		MPI_Bcast(&anotherIteration, 1, MPI_C_BOOL, MASTER, MPI_COMM_WORLD);//MASTER send if there is more iteration
 		free(previousIncPoints);
