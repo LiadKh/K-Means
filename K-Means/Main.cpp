@@ -3,16 +3,17 @@
 int main(int argc, char* argv[])
 {
 	clock_t start, end;
-	int rank, numberOfProcesses, N, K, T, LIMIT, myNumberOfPoints, iterationNumber = 0;
+	int rank, numberOfProcesses, N, K, T, LIMIT, myNumberOfPoints, iterationNumber = 0, pathSize;
 	float dT, time, QM, q;
 	bool anotherIteration, isMovedPoint = NULL;
 	point_t *allPoints, *myPoints, *clusters, *incPoints = NULL, *previousIncPoints = NULL;
-	char input[INPUT_FILE_SIZE];
+	char path[PATH_SIZE];
 
-	initProcesses(&argc, &argv, &rank, &numberOfProcesses, input);
+	initProcesses(&argc, &argv, &rank, &numberOfProcesses, path, &pathSize);
 	if (rank == MASTER)
 	{
-		allPoints = readDataFile(input, &N, &K, &T, &dT, &LIMIT, &QM);
+		printf("The program need only the path of the folder which contain the input.txt, the output will be written to the same folder\n"); fflush(stdout);
+		allPoints = readDataFile(path, pathSize, &N, &K, &T, &dT, &LIMIT, &QM);
 		start = clock();
 	}
 	initWork(rank, numberOfProcesses, allPoints, N, &myPoints, &myNumberOfPoints, &clusters, &K);
@@ -26,11 +27,7 @@ int main(int argc, char* argv[])
 		{
 			anotherIteration = checkConditions(iterationNumber, LIMIT, T, time, isMovedPoint, QM, q);//Check the termination condition
 			iterationNumber++;
-<<<<<<< HEAD
-			printf("Iteration: %d\n", iterationNumber); fflush(stdout);
-=======
-			printf("Iteration : %d\n", iterationNumber); fflush(stdout);
->>>>>>> c47295dd9d4c5a8558137ac410816dad34126ea4
+			printf("Iteration: %d\t  q: %f\n", iterationNumber, q); fflush(stdout);
 		}
 		MPI_Bcast(&anotherIteration, 1, MPI_C_BOOL, MASTER, MPI_COMM_WORLD);//MASTER send if there is more iteration
 		free(previousIncPoints);
@@ -39,7 +36,7 @@ int main(int argc, char* argv[])
 	{//Write result to file
 		end = clock();
 		printf("Work time %f\n", (double)(end - start)); fflush(stdout);
-		writeToFile(time, q, clusters, K);
+		writeToFile(path, pathSize, time, q, clusters, K);
 		free(allPoints);
 	}
 	freeAllocations(2, myPoints, incPoints, clusters);

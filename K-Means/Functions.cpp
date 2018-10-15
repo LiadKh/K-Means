@@ -1,23 +1,39 @@
 #include "Functions.h"
 
-void initProcesses(int *argc, char** argv[], int *rank, int *numberOfProcesses, char* input)
+char* createFileName(char* path, int pathSize, char* fileName, int nameSize)
+{//Create full path with the file name
+	char* fullName = (char*)calloc(pathSize + nameSize + 2, sizeof(char));
+	char* back = "\\";
+	int size;
+	strncpy(fullName, path, pathSize);
+	size = pathSize;
+	strncpy(&(fullName[size++]), back, strlen(back));
+	strncpy(&(fullName[size]), fileName, nameSize);
+	return fullName;
+}
+
+void initProcesses(int *argc, char** argv[], int *rank, int *numberOfProcesses, char* path, int *pathSize)
 {//Init MPI
 	mpiInit(argc, argv, rank, numberOfProcesses);
 	commitMpiPointType();//Commit to MPI point type
 	if (*rank == MASTER)
 	{
 		if (*argc != 2) {
-			printf("Please run the program with full path of the input file\n"); fflush(stdout);
+			printf("Please run the program with path of the folder of input file\n"); fflush(stdout);
 			MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
-		memcpy(input, (*argv)[1], strlen((*argv)[1]) + 1);
+		*pathSize = int(strlen((*argv)[1]));
+		memcpy(path, (*argv)[1], *pathSize);
+		createFileName(path, *pathSize, INPUT_FILE, int(strlen(INPUT_FILE)));
 	}
 }
 
-point_t* readDataFile(char* fname, int *N, int* K, int* T, float* dT, int* LIMIT, float* QM)
+point_t* readDataFile(char* path, int pathSize, int *N, int* K, int* T, float* dT, int* LIMIT, float* QM)
 {//Read data from file
 	point_t* points;
-	FILE* f = fopen(fname, "r");
+	char* input = createFileName(path, pathSize, INPUT_FILE, int(strlen(INPUT_FILE)));
+	FILE* f = fopen(input, "r");
+	printf("Read points from: %s\n", input); fflush(stdout);
 	if (f == NULL)//File problem
 	{
 		printf("Failed opening the file. Exiting!\n"); fflush(stdout);
@@ -38,6 +54,7 @@ point_t* readDataFile(char* fname, int *N, int* K, int* T, float* dT, int* LIMIT
 	for (int i = 0; i < *N; i++)// Read N points
 		fscanf(f, "%f %f %f %f %f %f", &(points[i].x), &(points[i].y), &(points[i].z), &(points[i].vx), &(points[i].vy), &(points[i].vz));
 	fclose(f);
+	free(input);
 	return points;
 }
 
@@ -197,19 +214,22 @@ bool checkConditions(int iterations, int LIMIT, int T, float time, bool movedPoi
 	return true;
 }
 
-void writeToFile(float t, float q, point_t *clusters, int k)
+void writeToFile(char* path, int pathSize, float t, float q, point_t *clusters, int k)
 {//Write project output
-	FILE* f = fopen(OUTPUT_FILE, "w");
+	char* output = createFileName(path, pathSize, OUTPUT_FILE, int(strlen(OUTPUT_FILE)));
+	FILE* f = fopen(output, "w");
 	if (f == NULL)//File problem
 	{
 		printf("Failed opening the file. Exiting!\n"); fflush(stdout);
 		exit(EXIT_FAILURE);
 	}
+	printf("Write result to: %s\n", output); fflush(stdout);
 	fprintf(f, "First occurrence t = %f  with q = %f\n", t, q);
 	fprintf(f, "Centers of the clusters :\n");
 	for (int i = 0; i < k; i++)// Write K clusters
 		fprintf(f, "%f \t %f \t %f \t \n", clusters[i].x, clusters[i].y, clusters[i].z);
 	printf("Thanks for your use!!! Exiting.\n"); fflush(stdout);
+	free(output);
 }
 
 void freeAllocations(int count, ...)
