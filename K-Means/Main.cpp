@@ -26,7 +26,11 @@ int main(int argc, char* argv[])
 		{
 			anotherIteration = checkConditions(iterationNumber, LIMIT, T, time, isMovedPoint, QM, q);//Check the termination condition
 			iterationNumber++;
+<<<<<<< HEAD
 			printf("Iteration: %d\n", iterationNumber); fflush(stdout);
+=======
+			printf("Iteration : %d\n", iterationNumber); fflush(stdout);
+>>>>>>> c47295dd9d4c5a8558137ac410816dad34126ea4
 		}
 		MPI_Bcast(&anotherIteration, 1, MPI_C_BOOL, MASTER, MPI_COMM_WORLD);//MASTER send if there is more iteration
 		free(previousIncPoints);
