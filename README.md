@@ -1,6 +1,5 @@
 # K-Means
-k-means clustering is a method of vector quantization, which aims to partition n observations into k clusters in which each observation belongs to the cluster with the nearest mean, serving as a prototype of the cluster. This results in a partitioning of the data space into Voronoi cells. - Wikipedia
-
+k-means clustering is a method of vector quantization, which aims to partition n observations into k clusters in which each observation belongs to the cluster with the nearest mean, serving as a prototype of the cluster. This results in a partitioning of the data space into Voronoi cells. - [Wikipedia](https://en.wikipedia.org/wiki/K-means_clustering)
 ### Prerequisites
 Nvidia GPU with cuda support, then install: 
 
