@@ -102,7 +102,10 @@ MPI sends data between the machines, OPM calculates by parallel work with CPU th
 # Building the program 
 1. Build the project on Visual Studio 2015 with CUDA 8 support.
 2. Set the .exe file on the same path in every machine.
-1. In your main computer - open wmpiexec and enter computers ips and the build path with "input.txt" file. Don't forget to select the number of processes. Run the program with the number of processors = number of machines. 
+3. In your main computer - open wmpiexec.
+4. Insert the path of the .exe file and the path of the folder which contain the input.txt
+5. Enter computers ips
+6. Select the number of processes. (Run the program with the number of processors = number of machines). 
 
 # Algorithm
 1. MASTER process reads the data from "input.txt" file.
@@ -164,7 +167,7 @@ II. Parallel for i to k:
 8. Check if there is point that move to another cluster - **MPI & OMP**
 
 ```
-Each process check if point moved to another cluster
+Each process check if his point moved to another cluster
 Sent to MASTER
 MASTER check if there is or not the the answer from the processes
 ```
@@ -173,10 +176,11 @@ MASTER check if there is or not the the answer from the processes
 
 ```
 Each process create K arrays - each array contained the point in the same cluster
+Each process send the K arrays to process with rank -1
 MASTER get the point in the each cluster from all process
 Each process ask MASTER to work
 MASTER sent the point in the same cluster or that isn't work
-Process find the largest distance between two points of this cluster
+Process find and send the largest distance between two points of this cluster
 MASTER calculate the q
 ```
 
