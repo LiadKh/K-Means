@@ -2,15 +2,24 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
+//for __syncthreads()
+#ifndef __CUDACC_RTC__ 
+#define __CUDACC_RTC__
+#endif // !(__CUDACC_RTC__)
+
+#include <device_functions.h>
+
 #include <stdio.h>
 #include "Const.h"
 
 #define THREAD_IN_BLOCK 1000
-#define ONE_THREAD_WORK 1000
+#define MAX_CLUSTERS 200
+#define ONE_THREAD_WORK 50
 
 __global__ void incKernel(point_t *incPoints, const point_t *points, float dT, int numberOfPoints)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	__syncthreads();
 	if (index < numberOfPoints)
 	{
 		incPoints[index].x = points[index].x + dT*points[index].vx;
@@ -19,11 +28,39 @@ __global__ void incKernel(point_t *incPoints, const point_t *points, float dT, i
 	}
 }
 
+__device__ float distance2Points(point_t *p1, point_t *p2)
+{//Find distance between two points
+	return sqrt(pow(p1->x - p2->x, 2) + pow(p1->y - p2->y, 2) + pow(p1->z - p2->z, 2));
+}
+
+__global__ void setCloseClusterKernel(point_t *points, int numberOfPoints, point_t *clusters, int numberOfClusters)
+{
+	int index = (blockIdx.x * blockDim.x + threadIdx.x)*ONE_THREAD_WORK;
+	float temp, distance;
+	__shared__ point_t sharedClusters[MAX_CLUSTERS];
+	if (threadIdx.x < numberOfClusters)
+		sharedClusters[threadIdx.x] = clusters[threadIdx.x];
+	__syncthreads();
+	for (int i = 0; i < ONE_THREAD_WORK && index < numberOfPoints; i++, index++)
+	{
+		for (int j = 0; j < numberOfClusters; j++)
+		{
+			temp = distance2Points(&(points[index]), &(sharedClusters[j]));
+			if (j == 0 || temp < distance)
+			{//Set close cluster id
+				points[index].cluster = j;
+				distance = temp;
+			}
+		}
+	}
+}
+
 // Helper function for using CUDA to add vectors in parallel.
-cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dT, point_t* incPoints)
+cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dT, point_t* incPoints, point_t* clusters, int numberOfClusters)
 {
 	point_t *dev_points = 0;
 	point_t *dev_iniced_points = 0;
+	point_t *dev_clusters = 0;
 	cudaError_t cudaStatus;
 
 	// Choose which GPU to run on, change this on a multi-GPU system.
@@ -46,8 +83,20 @@ cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dT, poi
 		goto Error;
 	}
 
+	cudaStatus = cudaMalloc((void**)&dev_clusters, numberOfClusters * sizeof(point_t));
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMalloc failed!");
+		goto Error;
+	}
+
 	// Copy input vectors from host memory to GPU buffers.
 	cudaStatus = cudaMemcpy(dev_points, points, numberOfPoints * sizeof(point_t), cudaMemcpyHostToDevice);
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMemcpy failed!");
+		goto Error;
+	}
+
+	cudaStatus = cudaMemcpy(dev_clusters, clusters, numberOfClusters * sizeof(point_t), cudaMemcpyHostToDevice);
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaMemcpy failed!");
 		goto Error;
@@ -59,7 +108,17 @@ cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dT, poi
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "addKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
+		fprintf(stderr, "incKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
+		goto Error;
+	}
+
+	//int numberOfThread = THREAD_IN_BLOCK / ONE_THREAD_WORK;
+	setCloseClusterKernel << <numberOfPoints / (THREAD_IN_BLOCK / ONE_THREAD_WORK) + 1, THREAD_IN_BLOCK >> > (dev_iniced_points, numberOfPoints, dev_clusters, numberOfClusters);
+
+	// Check for any errors launching the kernel
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "setCloseClusterKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
 		goto Error;
 	}
 
@@ -81,6 +140,7 @@ cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dT, poi
 Error:
 	cudaFree(dev_points);
 	cudaFree(dev_iniced_points);
+	cudaFree(dev_clusters);
 
 	return cudaStatus;
 }

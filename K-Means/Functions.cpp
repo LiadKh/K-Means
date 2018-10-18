@@ -189,8 +189,8 @@ void iteration(int rank, int numberOfProcesses, point_t* points, int numberOfPoi
 	point_t* newClusters = NULL;
 	int *pointInCluster;
 	broadcastIterationData(clusters, k, &dt);
-	*incedPoints = incPoints(points, numberOfPoints, dt);//Calculate increased points
-	setClosestCluster(*incedPoints, numberOfPoints, *clusters, k);//Set closet cluster to each point
+	*incedPoints = incAndSetCloseCluster(points, numberOfPoints, dt, *clusters, k);//Calculate increased points
+																				   //setClosesCluster(*incedPoints, numberOfPoints, *clusters, k);//Set closet cluster to each point
 	newClusters = getNewClusters(rank, numberOfProcesses, *incedPoints, numberOfPoints, *clusters, k, &pointInCluster);//Get the new clusters
 	*isMovedPoint = checkMovedPoint(rank, numberOfProcesses, *incedPoints, oldPoints, numberOfPoints);//If there is point that moved to another cluster
 	*q = calucQ(rank, numberOfProcesses, *incedPoints, numberOfPoints, newClusters, k, pointInCluster);//Calculate quality measure

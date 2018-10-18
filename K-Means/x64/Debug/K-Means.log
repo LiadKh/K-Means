@@ -1,16 +1,9 @@
-﻿  
-  D:\Projects\Visual studio\Parallel and Distributed Computing - Final Project\K-Means\K-Means>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\bin\nvcc.exe" -ccbin "D:\Program Files\Microsoft Visual Studio\2015\14.0\VC\bin\x86_amd64"  -I"C:\Program Files\MPICH2\include" -I"D:\Program Files\MPICH2\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include"  -G   --keep-dir x64\Debug -maxrregcount=0  --machine 64 --compile   -g   -DWIN32 -DWIN64 -D_DEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /FS /Zi /RTC1 /MDd " -o x64\Debug\kernel.cu.obj "D:\Projects\Visual studio\Parallel and Distributed Computing - Final Project\K-Means\K-Means\kernel.cu" -clean 
-CUDACOMPILE : nvcc warning : The 'compute_20', 'sm_20', and 'sm_21' architectures are deprecated, and may be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
-  kernel.cu
-  Compiling CUDA source file kernel.cu...
+﻿  Compiling CUDA source file kernel.cu...
   
   D:\Projects\Visual studio\Parallel and Distributed Computing - Final Project\K-Means\K-Means>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\bin\nvcc.exe" -gencode=arch=compute_20,code=\"sm_20,compute_20\" --use-local-env --cl-version 2015 -ccbin "D:\Program Files\Microsoft Visual Studio\2015\14.0\VC\bin\x86_amd64"  -I"C:\Program Files\MPICH2\include" -I"D:\Program Files\MPICH2\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include"  -G   --keep-dir x64\Debug -maxrregcount=0  --machine 64 --compile -cudart static  -g   -DWIN32 -DWIN64 -D_DEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /FS /Zi /RTC1 /MDd " -o x64\Debug\kernel.cu.obj "D:\Projects\Visual studio\Parallel and Distributed Computing - Final Project\K-Means\K-Means\kernel.cu" 
 CUDACOMPILE : nvcc warning : The 'compute_20', 'sm_20', and 'sm_21' architectures are deprecated, and may be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
   kernel.cu
-  OmpFunctions.cpp
-d:\projects\visual studio\parallel and distributed computing - final project\k-means\k-means\ompfunctions.cpp(5): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
   MpiFunctions.cpp
-  Main.cpp
   Functions.cpp
 d:\projects\visual studio\parallel and distributed computing - final project\k-means\k-means\functions.cpp(8): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\string.h(346): note: see declaration of 'strncpy'
@@ -27,6 +20,9 @@ d:\projects\visual studio\parallel and distributed computing - final project\k-m
 d:\projects\visual studio\parallel and distributed computing - final project\k-means\k-means\functions.cpp(220): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\stdio.h(205): note: see declaration of 'fopen'
   CudaFunctions.cpp
+  Generating Code...
+  Compiling...
+  Main.cpp
   Generating Code...
   K-Means.vcxproj -> D:\Projects\Visual studio\Parallel and Distributed Computing - Final Project\K-Means\x64\Debug\K-Means.exe
   K-Means.vcxproj -> D:\Projects\Visual studio\Parallel and Distributed Computing - Final Project\K-Means\x64\Debug\K-Means.pdb (Full PDB)
