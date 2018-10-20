@@ -117,7 +117,7 @@ MPI sends data between the machines, OPM calculates by parallel work with CPU th
 ## Iteration
 4. MASTER process send dt - **MPI**
 
-5. Each process finds the current position of each own points (dt) - **CUDA**
+5. Each process finds the current position of each own points (dt) - **CUDA & OMP**
 
 ```
 xi(t) = xi + t*vxi
@@ -125,7 +125,7 @@ yi(t) = yi + t*vyi
 zi(t) = zi + t*vzi
 ```
 
-6. Find the shortest cluster - **CUDA & OMP** 
+6. Find the shortest cluster - **CUDA & OMP**
 
 ```
 All the processes do:
