@@ -42,7 +42,7 @@ int main(int argc, const char* argv[])
 	{
 		for (int j = 0; j < 3; j++)
 		{
-			r = getRandom(-i, i);
+			r = getRandom((float)-i, (float)i);
 			fprintf(f, "%f ", r);
 		}
 		for (int j = 0; j < 3; j++)

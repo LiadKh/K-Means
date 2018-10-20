@@ -2,24 +2,17 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
-//for __syncthreads()
-#ifndef __CUDACC_RTC__ 
-#define __CUDACC_RTC__
-#endif // !(__CUDACC_RTC__)
-
-#include <device_functions.h>
-
 #include <stdio.h>
+#include <math.h>
 #include "Const.h"
 
 #define THREAD_IN_BLOCK 1000
 #define MAX_CLUSTERS 200
-#define ONE_THREAD_WORK 50
+#define ONE_THREAD_WORK 10
 
 __global__ void incKernel(point_t *incPoints, const point_t *points, float dT, int numberOfPoints)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	__syncthreads();
 	if (index < numberOfPoints)
 	{
 		incPoints[index].x = points[index].x + dT*points[index].vx;
@@ -55,12 +48,11 @@ __global__ void setCloseClusterKernel(point_t *points, int numberOfPoints, point
 	}
 }
 
-// Helper function for using CUDA to add vectors in parallel.
-cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dT, point_t* incPoints, point_t* clusters, int numberOfClusters)
+// Helper function for using CUDA to inc point with dt speed in parallel.
+cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dT, point_t* incPoints)
 {
 	point_t *dev_points = 0;
 	point_t *dev_iniced_points = 0;
-	point_t *dev_clusters = 0;
 	cudaError_t cudaStatus;
 
 	// Choose which GPU to run on, change this on a multi-GPU system.
@@ -78,6 +70,66 @@ cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dT, poi
 	}
 
 	cudaStatus = cudaMalloc((void**)&dev_iniced_points, numberOfPoints * sizeof(point_t));
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMalloc failed!");
+		goto Error;
+	}
+
+	// Copy input vectors from host memory to GPU buffers.
+	cudaStatus = cudaMemcpy(dev_points, points, numberOfPoints * sizeof(point_t), cudaMemcpyHostToDevice);
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMemcpy failed!");
+		goto Error;
+	}
+
+	// Launch a kernel on the GPU with one thread for each element.
+	incKernel << <numberOfPoints / THREAD_IN_BLOCK + 1, THREAD_IN_BLOCK >> > (dev_iniced_points, dev_points, dT, numberOfPoints);
+
+	// Check for any errors launching the kernel
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "incKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
+		goto Error;
+	}
+
+	// cudaDeviceSynchronize waits for the kernel to finish, and returns
+	// any errors encountered during the launch.
+	cudaStatus = cudaDeviceSynchronize();
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
+		goto Error;
+	}
+
+	// Copy output vector from GPU buffer to host memory.
+	cudaStatus = cudaMemcpy(incPoints, dev_iniced_points, numberOfPoints * sizeof(point_t), cudaMemcpyDeviceToHost);
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMemcpy failed!");
+		goto Error;
+	}
+
+Error:
+	cudaFree(dev_points);
+	cudaFree(dev_iniced_points);
+
+	return cudaStatus;
+}
+
+// Helper function for using CUDA to set the close cluster to each point in parallel..
+cudaError_t setCloseClusterWithCuda(point_t* points, int numberOfPoints, point_t* clusters, int numberOfClusters)
+{
+	point_t *dev_points = 0;
+	point_t *dev_clusters = 0;
+	cudaError_t cudaStatus;
+
+	// Choose which GPU to run on, change this on a multi-GPU system.
+	cudaStatus = cudaSetDevice(0);
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
+		goto Error;
+	}
+
+	// Allocate GPU buffers for three vectors (two input, one output)    .
+	cudaStatus = cudaMalloc((void**)&dev_points, numberOfPoints * sizeof(point_t));
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaMalloc failed!");
 		goto Error;
@@ -102,18 +154,8 @@ cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dT, poi
 		goto Error;
 	}
 
-	// Launch a kernel on the GPU with one thread for each element.
-	incKernel << <numberOfPoints / THREAD_IN_BLOCK + 1, THREAD_IN_BLOCK >> > (dev_iniced_points, dev_points, dT, numberOfPoints);
-
-	// Check for any errors launching the kernel
-	cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "incKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
-		goto Error;
-	}
-
 	//int numberOfThread = THREAD_IN_BLOCK / ONE_THREAD_WORK;
-	setCloseClusterKernel << <numberOfPoints / (THREAD_IN_BLOCK / ONE_THREAD_WORK) + 1, THREAD_IN_BLOCK >> > (dev_iniced_points, numberOfPoints, dev_clusters, numberOfClusters);
+	setCloseClusterKernel << <numberOfPoints / (THREAD_IN_BLOCK / ONE_THREAD_WORK) + 1, THREAD_IN_BLOCK >> > (dev_points, numberOfPoints, dev_clusters, numberOfClusters);
 
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
@@ -131,7 +173,7 @@ cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dT, poi
 	}
 
 	// Copy output vector from GPU buffer to host memory.
-	cudaStatus = cudaMemcpy(incPoints, dev_iniced_points, numberOfPoints * sizeof(point_t), cudaMemcpyDeviceToHost);
+	cudaStatus = cudaMemcpy(points, dev_points, numberOfPoints * sizeof(point_t), cudaMemcpyDeviceToHost);
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaMemcpy failed!");
 		goto Error;
@@ -139,7 +181,6 @@ cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dT, poi
 
 Error:
 	cudaFree(dev_points);
-	cudaFree(dev_iniced_points);
 	cudaFree(dev_clusters);
 
 	return cudaStatus;

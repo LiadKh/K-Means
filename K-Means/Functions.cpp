@@ -72,6 +72,23 @@ void initWork(int rank, int numberOfProcesses, point_t *allPoints, int N, point_
 	scatterPoints(rank, numberOfProcesses, allPoints, N, myPoints, myNumberOfPoints);//Init process with The points that belong to him
 }
 
+void setCluster(point_t *points, int numberOfPoints, point_t* clusters, int numberOfCluster)
+{//Set the close cluster - CUDA and Cluster
+	omp_set_nested(true);
+	int workSize = numberOfPoints / 2;
+#pragma omp parallel sections // Divides the work into sections
+	{
+#pragma omp section
+		{
+			setClusterCUDA(points, workSize, clusters, numberOfCluster);//Set closet cluster to each point - CUDA
+		}
+#pragma omp section
+		{
+			setCloseClusterOMP(&(points[workSize]), numberOfPoints - workSize, clusters, numberOfCluster);//Set closet cluster to each point - OMP
+		}
+	}
+}
+
 point_t* getNewClusters(int rank, int numberOfProcesses, point_t* points, int numberOfPoints, point_t* oldClusters, int numberOfClusters, int **pointInCluster)
 {//Find new clusters
 	point_t* newClusters = NULL;
@@ -189,8 +206,8 @@ void iteration(int rank, int numberOfProcesses, point_t* points, int numberOfPoi
 	point_t* newClusters = NULL;
 	int *pointInCluster;
 	broadcastIterationData(clusters, k, &dt);
-	*incedPoints = incAndSetCloseCluster(points, numberOfPoints, dt, *clusters, k);//Calculate increased points
-																				   //setClosesCluster(*incedPoints, numberOfPoints, *clusters, k);//Set closet cluster to each point
+	*incedPoints = incPointsCUDA(points, numberOfPoints, dt);//Calculate increased points
+	setCluster(*incedPoints, numberOfPoints, *clusters, k);
 	newClusters = getNewClusters(rank, numberOfProcesses, *incedPoints, numberOfPoints, *clusters, k, &pointInCluster);//Get the new clusters
 	*isMovedPoint = checkMovedPoint(rank, numberOfProcesses, *incedPoints, oldPoints, numberOfPoints);//If there is point that moved to another cluster
 	*q = calucQ(rank, numberOfProcesses, *incedPoints, numberOfPoints, newClusters, k, pointInCluster);//Calculate quality measure

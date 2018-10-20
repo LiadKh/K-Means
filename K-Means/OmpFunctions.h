@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 float distancePoints(point_t p1, point_t p2);
-void setCloseCluster(point_t* points, int numberOfPoints, point_t* clusters, int numberOfClusters);
+void setCloseClusterOMP(point_t* points, int numberOfPoints, point_t* clusters, int numberOfClusters);
 point_t* sumClusters(point_t* points, int numberOfPoints, int numberOfClusters, int *pointInCluster);
 point_t* combainPointsArrays(point_t* points, int numberOfArrays, int pointsInArray, int *pointInCluster);
 void setAverageToClusters(point_t* clusters, point_t* previousClusters, int numberOfPoints);

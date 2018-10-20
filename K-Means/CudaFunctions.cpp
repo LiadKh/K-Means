@@ -1,6 +1,6 @@
 #include "CudaFunctions.h"
 
-point_t* incAndSetCloseCluster(point_t* points, int numberOfPoints, float dt, point_t* clusters, int numberOfClusters)
+point_t* incPointsCUDA(point_t* points, int numberOfPoints, float dt)
 {//Inic the points with dt time
 	point_t *incPoints = (point_t*)malloc(numberOfPoints * sizeof(point_t));
 	if (incPoints == NULL)
@@ -8,7 +8,7 @@ point_t* incAndSetCloseCluster(point_t* points, int numberOfPoints, float dt, po
 		printf("Not enough memory. Exiting!\n"); fflush(stdout);
 		exit(EXIT_FAILURE);
 	}
-	cudaError_t cudaStatus = incPointsWithCuda(points, numberOfPoints, dt, incPoints, clusters, numberOfClusters);// Inic points arr with dt time in parallel.
+	cudaError_t cudaStatus = incPointsWithCuda(points, numberOfPoints, dt, incPoints);// Inic points arr with dt time in parallel.
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "inicDTWithCuda failed!");
 	}
@@ -19,4 +19,19 @@ point_t* incAndSetCloseCluster(point_t* points, int numberOfPoints, float dt, po
 		fprintf(stderr, "cudaDeviceReset failed!");
 	}
 	return incPoints;
+}
+
+void setClusterCUDA(point_t* points, int numberOfPoints, point_t* clusters, int numberOfCluster)
+{//Set the close cluster with CUDA
+
+	cudaError_t cudaStatus = setCloseClusterWithCuda(points, numberOfPoints, clusters, numberOfCluster);// Inic points arr with dt time in parallel.
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "inicDTWithCuda failed!");
+	}
+
+	// cudaDeviceReset must be called before exiting in order for profiling and
+	cudaStatus = cudaDeviceReset();
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaDeviceReset failed!");
+	}
 }

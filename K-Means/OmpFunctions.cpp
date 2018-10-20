@@ -2,13 +2,13 @@
 
 float distancePoints(point_t p1, point_t p2)
 {//Find distance between two points
-	return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2) + pow(p1.z - p2.z, 2));
+	return (float)sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2) + pow(p1.z - p2.z, 2));
 }
 
-void setCloseCluster(point_t* points, int numberOfPoints, point_t* clusters, int numberOfClusters)
+void setCloseClusterOMP(point_t* points, int numberOfPoints, point_t* clusters, int numberOfClusters)
 {//Find the close cluster
 	int tid = NULL, numberOfThreads = omp_get_max_threads();
-#pragma omp for
+#pragma omp parallel for
 	for (int i = 0; i < numberOfPoints; i++)
 	{
 		float distance, temp;
