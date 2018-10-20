@@ -125,7 +125,7 @@ yi(t) = yi + t*vyi
 zi(t) = zi + t*vzi
 ```
 
-6. Find the shortest cluster - **OMP** 
+6. Find the shortest cluster - **CUDA & OMP** 
 
 ```
 All the processes do:
