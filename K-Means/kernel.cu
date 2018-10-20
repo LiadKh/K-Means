@@ -8,7 +8,7 @@
 
 #define THREAD_IN_BLOCK 1000
 #define MAX_CLUSTERS 200
-#define ONE_THREAD_WORK 10
+#define ONE_THREAD_WORK 5
 
 __global__ void incKernel(point_t *incPoints, const point_t *points, float dT, int numberOfPoints)
 {

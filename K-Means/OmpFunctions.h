@@ -7,6 +7,7 @@
 #include <math.h>
 #include <stdio.h>
 
+void incPointsOMP(point_t* points, int numberOfPoints, float dt, point_t *incPoints);
 float distancePoints(point_t p1, point_t p2);
 void setCloseClusterOMP(point_t* points, int numberOfPoints, point_t* clusters, int numberOfClusters);
 point_t* sumClusters(point_t* points, int numberOfPoints, int numberOfClusters, int *pointInCluster);

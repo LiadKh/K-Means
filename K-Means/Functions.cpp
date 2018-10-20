@@ -13,7 +13,8 @@ char* createFileName(char* path, int pathSize, char* fileName, int nameSize)
 }
 
 void initProcesses(int *argc, char** argv[], int *rank, int *numberOfProcesses, char* path, int *pathSize)
-{//Init MPI
+{//Init
+	omp_set_nested(true);
 	mpiInit(argc, argv, rank, numberOfProcesses);
 	commitMpiPointType();//Commit to MPI point type
 	if (*rank == MASTER)
@@ -72,10 +73,31 @@ void initWork(int rank, int numberOfProcesses, point_t *allPoints, int N, point_
 	scatterPoints(rank, numberOfProcesses, allPoints, N, myPoints, myNumberOfPoints);//Init process with The points that belong to him
 }
 
+void incPoints(point_t* points, int numberOfPoints, float dt, point_t **incPoints)
+{//Calculate increased points
+	*incPoints = (point_t*)malloc(numberOfPoints * sizeof(point_t));
+	int workSize = numberOfPoints * CUDA_PERCENT_OF_WORK;
+	if (*incPoints == NULL)//Allocation problem
+	{
+		printf("Not enough memory. Exiting!\n"); fflush(stdout);
+		exit(EXIT_FAILURE);
+	}
+#pragma omp parallel sections // Divides the work into sections
+	{
+#pragma omp section
+		{
+			incPointsCUDA(points, workSize, dt, *incPoints);
+		}
+#pragma omp section
+		{
+			incPointsOMP(points, numberOfPoints, dt, *incPoints);
+		}
+	}
+}
+
 void setCluster(point_t *points, int numberOfPoints, point_t* clusters, int numberOfCluster)
 {//Set the close cluster - CUDA and Cluster
-	omp_set_nested(true);
-	int workSize = numberOfPoints / 2;
+	int workSize = (numberOfPoints / 2) * CUDA_PERCENT_OF_WORK;
 #pragma omp parallel sections // Divides the work into sections
 	{
 #pragma omp section
@@ -206,7 +228,7 @@ void iteration(int rank, int numberOfProcesses, point_t* points, int numberOfPoi
 	point_t* newClusters = NULL;
 	int *pointInCluster;
 	broadcastIterationData(clusters, k, &dt);
-	*incedPoints = incPointsCUDA(points, numberOfPoints, dt);//Calculate increased points
+	incPoints(points, numberOfPoints, dt, incedPoints);
 	setCluster(*incedPoints, numberOfPoints, *clusters, k);
 	newClusters = getNewClusters(rank, numberOfProcesses, *incedPoints, numberOfPoints, *clusters, k, &pointInCluster);//Get the new clusters
 	*isMovedPoint = checkMovedPoint(rank, numberOfProcesses, *incedPoints, oldPoints, numberOfPoints);//If there is point that moved to another cluster

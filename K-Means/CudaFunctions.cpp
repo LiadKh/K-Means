@@ -1,13 +1,7 @@
 #include "CudaFunctions.h"
 
-point_t* incPointsCUDA(point_t* points, int numberOfPoints, float dt)
+void incPointsCUDA(point_t* points, int numberOfPoints, float dt, point_t *incPoints)
 {//Inic the points with dt time
-	point_t *incPoints = (point_t*)malloc(numberOfPoints * sizeof(point_t));
-	if (incPoints == NULL)
-	{//Allocation problem
-		printf("Not enough memory. Exiting!\n"); fflush(stdout);
-		exit(EXIT_FAILURE);
-	}
 	cudaError_t cudaStatus = incPointsWithCuda(points, numberOfPoints, dt, incPoints);// Inic points arr with dt time in parallel.
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "inicDTWithCuda failed!");
@@ -18,7 +12,6 @@ point_t* incPointsCUDA(point_t* points, int numberOfPoints, float dt)
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaDeviceReset failed!");
 	}
-	return incPoints;
 }
 
 void setClusterCUDA(point_t* points, int numberOfPoints, point_t* clusters, int numberOfCluster)
