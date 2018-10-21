@@ -12,7 +12,6 @@ int main(int argc, char* argv[])
 	initProcesses(&argc, &argv, &rank, &numberOfProcesses, path, &pathSize);
 	if (rank == MASTER)
 	{
-		printf("The program need only the path of the folder which contain the input.txt, the output will be written to the same folder\n"); fflush(stdout);
 		allPoints = readDataFile(path, pathSize, &N, &K, &T, &dT, &LIMIT, &QM);
 		start = clock();
 	}
@@ -26,8 +25,7 @@ int main(int argc, char* argv[])
 		if (rank == MASTER)
 		{
 			anotherIteration = checkConditions(iterationNumber, LIMIT, T, time, isMovedPoint, QM, q);//Check the termination condition
-			iterationNumber++;
-			printf("Iteration: %d\t  q: %f\n", iterationNumber, q); fflush(stdout);
+			printf("Iteration: %d\t  q: %f\n%s\n", ++iterationNumber, q, newLine); fflush(stdout);
 		}
 		MPI_Bcast(&anotherIteration, 1, MPI_C_BOOL, MASTER, MPI_COMM_WORLD);//MASTER send if there is more iteration
 		free(previousIncPoints);
@@ -35,7 +33,7 @@ int main(int argc, char* argv[])
 	if (rank == MASTER)
 	{//Write result to file
 		end = clock();
-		printf("Work time %f\n", (double)(end - start)); fflush(stdout);
+		printf("Total work time %f sec\n%s\n", (double)(end - start) / CLOCKS_PER_SEC, newLine); fflush(stdout);
 		writeToFile(path, pathSize, time, q, clusters, K);
 		free(allPoints);
 	}

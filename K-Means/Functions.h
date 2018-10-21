@@ -14,6 +14,8 @@
 #define OUTPUT_FILE "output.txt"
 #define CUDA_PERCENT_OF_WORK 0.2 //[0,1]
 
+static char newLine[] = "------------------------------";
+
 char* createFileName(char* path, int pathSize, char* fileName, int nameSize);
 void initProcesses(int *argc, char** argv[], int *rank, int *numberOfProcesses, char* path, int *pathSize);
 point_t* readDataFile(char* path, int pathSize, int *N, int* K, int* T, float* dT, int* LIMIT, float* QM);

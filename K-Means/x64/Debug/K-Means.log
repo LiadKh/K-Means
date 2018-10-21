@@ -1,19 +1,4 @@
-﻿  
-  D:\Projects\Visual studio\Parallel and Distributed Computing - Final Project\K-Means\K-Means>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\bin\nvcc.exe" -ccbin "D:\Program Files\Microsoft Visual Studio\2015\14.0\VC\bin\x86_amd64"  -I"C:\Program Files\MPICH2\include" -I"D:\Program Files\MPICH2\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include"  -G   --keep-dir x64\Debug -maxrregcount=0  --machine 64 --compile   -g   -D_CRT_SECURE_NO_WARNINGS -DWIN32 -DWIN64 -D_DEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /FS /Zi /RTC1 /MDd " -o x64\Debug\kernel.cu.obj "D:\Projects\Visual studio\Parallel and Distributed Computing - Final Project\K-Means\K-Means\kernel.cu" -clean 
-CUDACOMPILE : nvcc warning : The 'compute_20', 'sm_20', and 'sm_21' architectures are deprecated, and may be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
-  kernel.cu
-  Compiling CUDA source file kernel.cu...
-  
-  D:\Projects\Visual studio\Parallel and Distributed Computing - Final Project\K-Means\K-Means>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\bin\nvcc.exe" -gencode=arch=compute_50,code=\"sm_50,compute_50\" --use-local-env --cl-version 2015 -ccbin "D:\Program Files\Microsoft Visual Studio\2015\14.0\VC\bin\x86_amd64"  -I"C:\Program Files\MPICH2\include" -I"D:\Program Files\MPICH2\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include"  -G   --keep-dir x64\Debug -maxrregcount=0  --machine 64 --compile -cudart static  -g   -D_CRT_SECURE_NO_WARNINGS -DWIN32 -DWIN64 -D_DEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /FS /Zi /RTC1 /MDd " -o x64\Debug\kernel.cu.obj "D:\Projects\Visual studio\Parallel and Distributed Computing - Final Project\K-Means\K-Means\kernel.cu" 
-  kernel.cu
-  OmpFunctions.cpp
-  MpiFunctions.cpp
-  Main.cpp
-  Functions.cpp
-d:\projects\visual studio\parallel and distributed computing - final project\k-means\k-means\functions.cpp(79): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
-d:\projects\visual studio\parallel and distributed computing - final project\k-means\k-means\functions.cpp(100): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
-  CudaFunctions.cpp
-  Generating Code...
+﻿  Main.cpp
   K-Means.vcxproj -> D:\Projects\Visual studio\Parallel and Distributed Computing - Final Project\K-Means\x64\Debug\K-Means.exe
   K-Means.vcxproj -> D:\Projects\Visual studio\Parallel and Distributed Computing - Final Project\K-Means\x64\Debug\K-Means.pdb (Full PDB)
   copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\bin\cudart*.dll" "D:\Projects\Visual studio\Parallel and Distributed Computing - Final Project\K-Means\x64\Debug\"

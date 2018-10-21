@@ -1,6 +1,7 @@
 #pragma once
 
 #define MASTER 0
+#define DEBUG
 
 typedef struct
 {

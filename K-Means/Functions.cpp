@@ -34,7 +34,7 @@ point_t* readDataFile(char* path, int pathSize, int *N, int* K, int* T, float* d
 	point_t* points;
 	char* input = createFileName(path, pathSize, INPUT_FILE, int(strlen(INPUT_FILE)));
 	FILE* f = fopen(input, "r");
-	printf("Read points from: %s\n", input); fflush(stdout);
+	printf("Read points from: %s\n%s\n", input, newLine); fflush(stdout);
 	if (f == NULL)//File problem
 	{
 		printf("Failed opening the file. Exiting!\n"); fflush(stdout);
@@ -76,7 +76,7 @@ void initWork(int rank, int numberOfProcesses, point_t *allPoints, int N, point_
 void incPoints(point_t* points, int numberOfPoints, float dt, point_t **incPoints)
 {//Calculate increased points
 	*incPoints = (point_t*)malloc(numberOfPoints * sizeof(point_t));
-	int workSize = numberOfPoints * CUDA_PERCENT_OF_WORK;
+	int workSize = int(numberOfPoints * CUDA_PERCENT_OF_WORK);
 	if (*incPoints == NULL)//Allocation problem
 	{
 		printf("Not enough memory. Exiting!\n"); fflush(stdout);
@@ -97,7 +97,7 @@ void incPoints(point_t* points, int numberOfPoints, float dt, point_t **incPoint
 
 void setCluster(point_t *points, int numberOfPoints, point_t* clusters, int numberOfCluster)
 {//Set the close cluster - CUDA and Cluster
-	int workSize = (numberOfPoints / 2) * CUDA_PERCENT_OF_WORK;
+	int workSize = int(numberOfPoints * CUDA_PERCENT_OF_WORK);
 #pragma omp parallel sections // Divides the work into sections
 	{
 #pragma omp section
@@ -228,10 +228,30 @@ void iteration(int rank, int numberOfProcesses, point_t* points, int numberOfPoi
 	point_t* newClusters = NULL;
 	int *pointInCluster;
 	broadcastIterationData(clusters, k, &dt);
+#ifdef DEBUG
+	if (rank == MASTER)
+		printf("Inc points\n"); fflush(stdout);
+#endif
 	incPoints(points, numberOfPoints, dt, incedPoints);
+#ifdef DEBUG
+	if (rank == MASTER)
+		printf("Set close cluster\n"); fflush(stdout);
+#endif
 	setCluster(*incedPoints, numberOfPoints, *clusters, k);
+#ifdef DEBUG
+	if (rank == MASTER)
+		printf("Calculate new clusters\n"); fflush(stdout);
+#endif
 	newClusters = getNewClusters(rank, numberOfProcesses, *incedPoints, numberOfPoints, *clusters, k, &pointInCluster);//Get the new clusters
+#ifdef DEBUG
+	if (rank == MASTER)
+		printf("Check moved points\n"); fflush(stdout);
+#endif
 	*isMovedPoint = checkMovedPoint(rank, numberOfProcesses, *incedPoints, oldPoints, numberOfPoints);//If there is point that moved to another cluster
+#ifdef DEBUG
+	if (rank == MASTER)
+		printf("Calculate quality\n"); fflush(stdout);
+#endif
 	*q = calucQ(rank, numberOfProcesses, *incedPoints, numberOfPoints, newClusters, k, pointInCluster);//Calculate quality measure
 	if (rank == MASTER)
 		memcpy(*clusters, newClusters, k * sizeof(point_t));
@@ -242,14 +262,34 @@ bool checkConditions(int iterations, int LIMIT, int T, float time, bool movedPoi
 {//Check termination condition
 	if (iterations == 0)//Check first iteration
 		return true;
-	if (iterations > LIMIT)//Check maximum number of iterations
+	if (iterations >= LIMIT - 1)//Check maximum number of iterations
+	{
+#ifdef DEBUG
+		printf("Max iteration\n"); fflush(stdout);
+#endif
 		return false;
-	if (time > T)//Check end of time interval 
+	}
+	if (time >= T)//Check end of time interval 
+	{
+#ifdef DEBUG
+		printf("Max time - dt\n"); fflush(stdout);
+#endif
 		return false;
+	}
 	if (!movedPoint)//Check no point move to another cluster
+	{
+#ifdef DEBUG
+		printf("No point moved\n"); fflush(stdout);
+#endif
 		return false;
+	}
 	if (q <= QM)//Check quality measure to stop
+	{
+#ifdef DEBUG
+		printf("Quality measure to stop\n"); fflush(stdout);
+#endif
 		return false;
+	}
 	return true;
 }
 
@@ -267,7 +307,7 @@ void writeToFile(char* path, int pathSize, float t, float q, point_t *clusters, 
 	fprintf(f, "Centers of the clusters :\n");
 	for (int i = 0; i < k; i++)// Write K clusters
 		fprintf(f, "%f \t %f \t %f \t \n", clusters[i].x, clusters[i].y, clusters[i].z);
-	printf("Thanks for your use!!! Exiting.\n"); fflush(stdout);
+	printf("Thanks for your use!!! Exiting...\n"); fflush(stdout);
 	free(output);
 }
 
