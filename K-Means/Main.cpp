@@ -3,8 +3,8 @@
 int main(int argc, char* argv[])
 {
 	clock_t start, end;
-	int rank, numberOfProcesses, N, K, T, LIMIT, myNumberOfPoints, iterationNumber = 0, pathSize;
-	float dT, time, QM, q;
+	int rank, numberOfProcesses, N, K, LIMIT, myNumberOfPoints, iterationNumber = 0, pathSize;
+	float dT, time, T, QM, q;
 	bool anotherIteration, isMovedPoint = NULL;
 	point_t *allPoints, *myPoints, *clusters, *incPoints = NULL, *previousIncPoints = NULL;
 	char path[PATH_SIZE];

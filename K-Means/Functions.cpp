@@ -29,7 +29,7 @@ void initProcesses(int *argc, char** argv[], int *rank, int *numberOfProcesses, 
 	}
 }
 
-point_t* readDataFile(char* path, int pathSize, int *N, int* K, int* T, float* dT, int* LIMIT, float* QM)
+point_t* readDataFile(char* path, int pathSize, int *N, int* K, float* T, float* dT, int* LIMIT, float* QM)
 {//Read data from file
 	point_t* points;
 	char* input = createFileName(path, pathSize, INPUT_FILE, int(strlen(INPUT_FILE)));
@@ -40,7 +40,7 @@ point_t* readDataFile(char* path, int pathSize, int *N, int* K, int* T, float* d
 		printf("Failed opening the file. Exiting!\n"); fflush(stdout);
 		exit(EXIT_FAILURE);
 	}
-	fscanf(f, "%d %d %d %f %d %f", N, K, T, dT, LIMIT, QM);//Read N, K, T, dT, LIMIT, QM
+	fscanf(f, "%d %d %f %f %d %f", N, K, T, dT, LIMIT, QM);//Read N, K, T, dT, LIMIT, QM
 	points = (point_t*)malloc((*N) * sizeof(point_t));
 	if (points == NULL)//Allocation problem
 	{
@@ -185,17 +185,17 @@ float calucQ(int rank, int numberOfProcesses, point_t* points, int numberOfPoint
 	collectPointsInClusters(rank, numberOfProcesses, numberOfClusters, pointsInCluster, numberOfPointsInCluster);//Sent the point to MASTER - each point in the custom array (cluster array)
 	if (rank == MASTER)
 	{//MASTER send points
-		for (int i = 0; i < numberOfClusters; i++)//Add new cluster as a point in the array
-		{
-			pointsInCluster[i] = (point_t*)realloc(pointsInCluster[i], (numberOfPointsInCluster[i] + 1) * sizeof(point_t));
-			if (pointsInCluster[i] == NULL)//Allocation problem
-			{
-				printf("Not enough memory. Exiting!\n"); fflush(stdout);
-				MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-			}
-			memcpy(&(pointsInCluster[i][numberOfPointsInCluster[i]]), &(clusters[i]), sizeof(point_t));
-			numberOfPointsInCluster[i]++;
-		}
+		//for (int i = 0; i < numberOfClusters; i++)//Add new cluster as a point in the array
+		//{
+		//	pointsInCluster[i] = (point_t*)realloc(pointsInCluster[i], (numberOfPointsInCluster[i] + 1) * sizeof(point_t));
+		//	if (pointsInCluster[i] == NULL)//Allocation problem
+		//	{
+		//		printf("Not enough memory. Exiting!\n"); fflush(stdout);
+		//		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		//	}
+		//	memcpy(&(pointsInCluster[i][numberOfPointsInCluster[i]]), &(clusters[i]), sizeof(point_t));
+		//	numberOfPointsInCluster[i]++;
+		//}
 		biggestDistanceArray = sendArrayOfPointInCluster(numberOfProcesses, pointsInCluster, numberOfPointsInCluster, numberOfClusters);
 		q = findQ(biggestDistanceArray, clusters, numberOfClusters);
 		free(biggestDistanceArray);
@@ -258,7 +258,7 @@ void iteration(int rank, int numberOfProcesses, point_t* points, int numberOfPoi
 	freeAllocations(2, newClusters, pointInCluster);
 }
 
-bool checkConditions(int iterations, int LIMIT, int T, float time, bool movedPoint, float QM, float q)
+bool checkConditions(int iterations, int LIMIT, float T, float time, bool movedPoint, float QM, float q)
 {//Check termination condition
 	if (iterations == 0)//Check first iteration
 		return true;
