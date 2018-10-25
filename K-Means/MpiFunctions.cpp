@@ -156,8 +156,8 @@ float* sendArrayOfPointInCluster(int numberOfProcesses, point_t** pointsInCluste
 	{//Send first job
 		if (numberOfPointInClusters[i] > 1)
 		{
-			MPI_Send(&(numberOfPointInClusters[i]), 1, MPI_INT, i + 1, i, MPI_COMM_WORLD);//Number of point to send
-			MPI_Send(pointsInClusters[i], numberOfPointInClusters[i], PointMPIType, i + 1, i, MPI_COMM_WORLD);//Send point
+			MPI_Send(&(numberOfPointInClusters[i]), 1, MPI_INT, workProcesses + 1, i, MPI_COMM_WORLD);//Number of point to send
+			MPI_Send(pointsInClusters[i], numberOfPointInClusters[i], PointMPIType, workProcesses + 1, i, MPI_COMM_WORLD);//Send point
 			workProcesses++;
 		}
 	}
