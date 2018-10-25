@@ -1,6 +1,6 @@
 #include "CudaFunctions.h"
 
-void incPointsCUDA(point_t* points, int numberOfPoints, float dt, point_t *incPoints)
+void incPointsCUDA(point_t* points, int numberOfPoints, double dt, point_t *incPoints)
 {//Inic the points with dt time
 	cudaError_t cudaStatus = incPointsWithCuda(points, numberOfPoints, dt, incPoints);// Inic points arr with dt time in parallel.
 	if (cudaStatus != cudaSuccess) {

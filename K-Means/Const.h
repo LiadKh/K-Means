@@ -5,11 +5,11 @@
 
 typedef struct
 {
-	float x;
-	float y;
-	float z;
-	float vx;
-	float vy;
-	float vz;
+	double x;
+	double y;
+	double z;
+	double vx;
+	double vy;
+	double vz;
 	int cluster;
 } point_t;

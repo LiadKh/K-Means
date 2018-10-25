@@ -10,7 +10,7 @@
 #define MAX_CLUSTERS 200
 #define ONE_THREAD_WORK 5
 
-__global__ void incKernel(point_t *incPoints, const point_t *points, float dT, int numberOfPoints)
+__global__ void incKernel(point_t *incPoints, const point_t *points, double dT, int numberOfPoints)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index < numberOfPoints)
@@ -21,7 +21,7 @@ __global__ void incKernel(point_t *incPoints, const point_t *points, float dT, i
 	}
 }
 
-__device__ float distance2Points(point_t *p1, point_t *p2)
+__device__ double distance2Points(point_t *p1, point_t *p2)
 {//Find distance between two points
 	return sqrt(pow(p1->x - p2->x, 2) + pow(p1->y - p2->y, 2) + pow(p1->z - p2->z, 2));
 }
@@ -29,7 +29,7 @@ __device__ float distance2Points(point_t *p1, point_t *p2)
 __global__ void setCloseClusterKernel(point_t *points, int numberOfPoints, point_t *clusters, int numberOfClusters)
 {
 	int index = (blockIdx.x * blockDim.x + threadIdx.x)*ONE_THREAD_WORK;
-	float temp, distance;
+	double temp, distance;
 	__shared__ point_t sharedClusters[MAX_CLUSTERS];
 	if (threadIdx.x < numberOfClusters)
 		sharedClusters[threadIdx.x] = clusters[threadIdx.x];
@@ -49,7 +49,7 @@ __global__ void setCloseClusterKernel(point_t *points, int numberOfPoints, point
 }
 
 // Helper function for using CUDA to inc point with dt speed in parallel.
-cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, float dT, point_t* incPoints)
+cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, double dT, point_t* incPoints)
 {
 	point_t *dev_points = 0;
 	point_t *dev_iniced_points = 0;

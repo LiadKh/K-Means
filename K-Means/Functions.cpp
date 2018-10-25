@@ -29,7 +29,7 @@ void initProcesses(int *argc, char** argv[], int *rank, int *numberOfProcesses, 
 	}
 }
 
-point_t* readDataFile(char* path, int pathSize, int *N, int* K, float* T, float* dT, int* LIMIT, float* QM)
+point_t* readDataFile(char* path, int pathSize, int *N, int* K, double* T, double* dT, int* LIMIT, double* QM)
 {//Read data from file
 	point_t* points;
 	char* input = createFileName(path, pathSize, INPUT_FILE, int(strlen(INPUT_FILE)));
@@ -40,7 +40,7 @@ point_t* readDataFile(char* path, int pathSize, int *N, int* K, float* T, float*
 		printf("Failed opening the file. Exiting!\n"); fflush(stdout);
 		exit(EXIT_FAILURE);
 	}
-	fscanf(f, "%d %d %f %f %d %f", N, K, T, dT, LIMIT, QM);//Read N, K, T, dT, LIMIT, QM
+	fscanf(f, "%d %d %lf %lf %d %lf", N, K, T, dT, LIMIT, QM);//Read N, K, T, dT, LIMIT, QM
 	points = (point_t*)malloc((*N) * sizeof(point_t));
 	if (points == NULL)//Allocation problem
 	{
@@ -53,7 +53,7 @@ point_t* readDataFile(char* path, int pathSize, int *N, int* K, float* T, float*
 		exit(EXIT_FAILURE);
 	}
 	for (int i = 0; i < *N; i++)// Read N points
-		fscanf(f, "%f %f %f %f %f %f", &(points[i].x), &(points[i].y), &(points[i].z), &(points[i].vx), &(points[i].vy), &(points[i].vz));
+		fscanf(f, "%lf %lf %lf %lf %lf %lf", &(points[i].x), &(points[i].y), &(points[i].z), &(points[i].vx), &(points[i].vy), &(points[i].vz));
 	fclose(f);
 	free(input);
 	return points;
@@ -73,7 +73,7 @@ void initWork(int rank, int numberOfProcesses, point_t *allPoints, int N, point_
 	scatterPoints(rank, numberOfProcesses, allPoints, N, myPoints, myNumberOfPoints);//Init process with The points that belong to him
 }
 
-void incPoints(point_t* points, int numberOfPoints, float dt, point_t **incPoints)
+void incPoints(point_t* points, int numberOfPoints, double dt, point_t **incPoints)
 {//Calculate increased points
 	*incPoints = (point_t*)malloc(numberOfPoints * sizeof(point_t));
 	int workSize = int(numberOfPoints * CUDA_PERCENT_OF_WORK);
@@ -172,9 +172,9 @@ point_t** setPointsInCluster(point_t* points, int numberOfPoints, int numberOfCl
 	return setArray;
 }
 
-float calucQ(int rank, int numberOfProcesses, point_t* points, int numberOfPoints, point_t* clusters, int numberOfClusters, int *numberOfPointsInCluster)
+double calucQ(int rank, int numberOfProcesses, point_t* points, int numberOfPoints, point_t* clusters, int numberOfClusters, int *numberOfPointsInCluster)
 {//Calculate quality measure
-	float q = NULL, *biggestDistanceArray;
+	double q = NULL, *biggestDistanceArray;
 	point_t** pointsInCluster = setPointsInCluster(points, numberOfPoints, numberOfClusters, numberOfPointsInCluster);//Set points in there cluster array
 
 	if (pointsInCluster == NULL)//Allocation problem
@@ -223,7 +223,7 @@ float calucQ(int rank, int numberOfProcesses, point_t* points, int numberOfPoint
 	return q;
 }
 
-void iteration(int rank, int numberOfProcesses, point_t* points, int numberOfPoints, point_t** clusters, int k, float dt, point_t* oldPoints, point_t** incedPoints, bool *isMovedPoint, float *q)
+void iteration(int rank, int numberOfProcesses, point_t* points, int numberOfPoints, point_t** clusters, int k, double dt, point_t* oldPoints, point_t** incedPoints, bool *isMovedPoint, double *q)
 {
 	point_t* newClusters = NULL;
 	int *pointInCluster;
@@ -258,7 +258,7 @@ void iteration(int rank, int numberOfProcesses, point_t* points, int numberOfPoi
 	freeAllocations(2, newClusters, pointInCluster);
 }
 
-bool checkConditions(int iterations, int LIMIT, float T, float time, bool movedPoint, float QM, float q)
+bool checkConditions(int iterations, int LIMIT, double T, double time, bool movedPoint, double QM, double q)
 {//Check termination condition
 	if (iterations == 0)//Check first iteration
 		return true;
@@ -293,7 +293,7 @@ bool checkConditions(int iterations, int LIMIT, float T, float time, bool movedP
 	return true;
 }
 
-void writeToFile(char* path, int pathSize, float t, float q, point_t *clusters, int k)
+void writeToFile(char* path, int pathSize, double t, double q, point_t *clusters, int k)
 {//Write project output
 	char* output = createFileName(path, pathSize, OUTPUT_FILE, int(strlen(OUTPUT_FILE)));
 	FILE* f = fopen(output, "w");

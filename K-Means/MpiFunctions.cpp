@@ -15,7 +15,7 @@ void mpiInit(int *argc, char** argv[], int *rank, int *numberOfProcesses)
 void commitMpiPointType()
 {// Create MPI user data type for point
 	point_t pointWithVelocity;
-	MPI_Datatype type[7] = { MPI_FLOAT, MPI_FLOAT, MPI_FLOAT ,MPI_FLOAT, MPI_FLOAT, MPI_FLOAT, MPI_INT };
+	MPI_Datatype type[7] = { MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE ,MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_INT };
 	int blocklen[7] = { 1, 1, 1, 1, 1, 1, 1 };
 	MPI_Aint disp[7];
 
@@ -71,10 +71,10 @@ void scatterPoints(int rank, int numberOfProcesses, point_t* allPoints, int N, p
 	}
 }
 
-void broadcastIterationData(point_t **clusters, int k, float *dt)
+void broadcastIterationData(point_t **clusters, int k, double *dt)
 {
 	MPI_Bcast(*clusters, k, PointMPIType, MASTER, MPI_COMM_WORLD);//Broadcast k clusters
-	MPI_Bcast(dt, 1, MPI_FLOAT, MASTER, MPI_COMM_WORLD); //Broadcast dt to this iteration
+	MPI_Bcast(dt, 1, MPI_DOUBLE, MASTER, MPI_COMM_WORLD); //Broadcast dt to this iteration
 }
 
 point_t* gatherPoints(int rank, int numberOfProcesses, point_t* myPoints, int numberOfPointsToSend)
@@ -140,12 +140,12 @@ void collectPointsInClusters(int rank, int numberOfProcesses, int numberOfCluste
 	}
 }
 
-float* sendArrayOfPointInCluster(int numberOfProcesses, point_t** pointsInClusters, int* numberOfPointInClusters, int numberOfClusters)
+double* sendArrayOfPointInCluster(int numberOfProcesses, point_t** pointsInClusters, int* numberOfPointInClusters, int numberOfClusters)
 {//MASTER send point in clusters
 	MPI_Status status;
 	int i = 0, workProcesses = 0;
-	float temp;
-	float *calculatedDistance = (float*)calloc(numberOfClusters, sizeof(float));
+	double temp;
+	double *calculatedDistance = (double*)calloc(numberOfClusters, sizeof(double));
 
 	if (calculatedDistance == NULL)//Allocation problem
 	{
@@ -156,8 +156,8 @@ float* sendArrayOfPointInCluster(int numberOfProcesses, point_t** pointsInCluste
 	{//Send first job
 		if (numberOfPointInClusters[i] > 1)
 		{
-			MPI_Send(&(numberOfPointInClusters[i]), 1, MPI_INT, i + 1, i, MPI_COMM_WORLD);//Number of point to send
-			MPI_Send(pointsInClusters[i], numberOfPointInClusters[i], PointMPIType, i + 1, i, MPI_COMM_WORLD);//Send point
+			MPI_Send(&(numberOfPointInClusters[i]), 1, MPI_INT, workProcesses + 1, i, MPI_COMM_WORLD);//Number of point to send
+			MPI_Send(pointsInClusters[i], numberOfPointInClusters[i], PointMPIType, workProcesses + 1, i, MPI_COMM_WORLD);//Send point
 			workProcesses++;
 		}
 	}
@@ -167,7 +167,7 @@ float* sendArrayOfPointInCluster(int numberOfProcesses, point_t** pointsInCluste
 	{
 		if (numberOfPointInClusters[i] > 1)
 		{
-			MPI_Recv(&temp, 1, MPI_FLOAT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);//Receive result 
+			MPI_Recv(&temp, 1, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);//Receive result 
 			calculatedDistance[status.MPI_TAG] = temp;
 			MPI_Send(&(numberOfPointInClusters[i]), 1, MPI_INT, status.MPI_SOURCE, i, MPI_COMM_WORLD);//Number of point to send
 			MPI_Send(pointsInClusters[i], numberOfPointInClusters[i], PointMPIType, status.MPI_SOURCE, i, MPI_COMM_WORLD);//Send point
@@ -175,20 +175,20 @@ float* sendArrayOfPointInCluster(int numberOfProcesses, point_t** pointsInCluste
 	}
 	for (i = 0; i < workProcesses; i++)
 	{
-		MPI_Recv(&temp, 1, MPI_FLOAT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);//Receive result 
+		MPI_Recv(&temp, 1, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);//Receive result 
 		calculatedDistance[status.MPI_TAG] = temp;
 		MPI_Send(&i, 1, MPI_INT, status.MPI_SOURCE, FINISH_WORK_TAG, MPI_COMM_WORLD);//Stop process - no more work
 	}
 	return calculatedDistance;
 }
 
-point_t* receiveArrayOfPointInCluster(int *workSize, int *clusterId, float distance, bool found)
+point_t* receiveArrayOfPointInCluster(int *workSize, int *clusterId, double distance, bool found)
 {//Slave get points to work from MASTER
 	point_t* result = NULL;
 	MPI_Status status;
 
 	if (found == true)// Not first iteration
-		MPI_Send(&distance, 1, MPI_FLOAT, MASTER, *clusterId, MPI_COMM_WORLD);//Send result
+		MPI_Send(&distance, 1, MPI_DOUBLE, MASTER, *clusterId, MPI_COMM_WORLD);//Send result
 	MPI_Recv(workSize, 1, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &status);//Number of point to receive
 	if (status.MPI_TAG != FINISH_WORK_TAG)
 	{

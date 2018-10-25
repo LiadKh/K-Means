@@ -1,6 +1,6 @@
 #include "OmpFunctions.h"
 
-void incPointsOMP(point_t* points, int numberOfPoints, float dt, point_t *incPoints)
+void incPointsOMP(point_t* points, int numberOfPoints, double dt, point_t *incPoints)
 {//Inc the point by dt time
 #pragma omp parallel for schedule(dynamic,1)
 	for (int i = 0; i < numberOfPoints; i++)
@@ -11,9 +11,9 @@ void incPointsOMP(point_t* points, int numberOfPoints, float dt, point_t *incPoi
 	}
 }
 
-float distancePoints(point_t p1, point_t p2)
+double distancePoints(point_t p1, point_t p2)
 {//Find distance between two points
-	return (float)sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2) + pow(p1.z - p2.z, 2));
+	return (double)sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2) + pow(p1.z - p2.z, 2));
 }
 
 void setCloseClusterOMP(point_t* points, int numberOfPoints, point_t* clusters, int numberOfClusters)
@@ -22,7 +22,7 @@ void setCloseClusterOMP(point_t* points, int numberOfPoints, point_t* clusters, 
 #pragma omp parallel for schedule(dynamic,1)
 	for (int i = 0; i < numberOfPoints; i++)
 	{
-		float distance, temp;
+		double distance, temp;
 		for (int j = 0; j < numberOfClusters; j++)
 		{
 			temp = distancePoints(points[i], clusters[j]);
@@ -142,11 +142,11 @@ bool checkArray(bool *arr, int size)
 	return false;
 }
 
-float biggestDistance(point_t* points, int numberOfPoints)
+double biggestDistance(point_t* points, int numberOfPoints)
 {//Find the biggest distance
 	int tid = NULL, numberOfThreads = omp_get_max_threads();
-	float dis = NULL, maxDistance;
-	float* distanceArray = (float*)calloc(numberOfThreads, sizeof(float));
+	double dis = NULL, maxDistance;
+	double* distanceArray = (double*)calloc(numberOfThreads, sizeof(double));
 	if (distanceArray == NULL)
 	{//Allocation problem
 		printf("Not enough memory. Exiting!\n"); fflush(stdout);
@@ -176,11 +176,11 @@ float biggestDistance(point_t* points, int numberOfPoints)
 	return maxDistance;
 }
 
-float findQ(float* maxDistance, point_t* clusters, int numberOfClusters)
+double findQ(double* maxDistance, point_t* clusters, int numberOfClusters)
 {
-	float q = 0, dis = NULL;
+	double q = 0, dis = NULL;
 	int tid = NULL, numberOfThreads = omp_get_max_threads();
-	float* distanceArray = (float*)calloc(numberOfThreads, sizeof(float));
+	double* distanceArray = (double*)calloc(numberOfThreads, sizeof(double));
 	if (distanceArray == NULL)
 	{//Allocation problem
 		printf("Not enough memory. Exiting!\n"); fflush(stdout);
