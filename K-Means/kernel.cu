@@ -3,7 +3,6 @@
 #include "device_launch_parameters.h"
 
 #include <stdio.h>
-#include <math.h>
 #include "Const.h"
 
 #define THREAD_IN_BLOCK 1000

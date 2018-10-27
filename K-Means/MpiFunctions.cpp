@@ -36,11 +36,7 @@ void scatterPoints(int rank, int numberOfProcesses, point_t* allPoints, int N, p
 		*numberOfPoints = int(N / numberOfProcesses);
 	MPI_Bcast(numberOfPoints, 1, MPI_INT, MASTER, MPI_COMM_WORLD);//Broadcast number of points to each process
 	*myPoints = (point_t*)malloc((*numberOfPoints) * sizeof(point_t));//Allocate number of points
-	if (*myPoints == NULL)//Allocation problem
-	{
-		printf("Not enough memory. Exiting!\n"); fflush(stdout);
-		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
+	checkAllocation(*myPoints);
 	MPI_Scatter(allPoints, *numberOfPoints, PointMPIType, *myPoints, *numberOfPoints, PointMPIType, MASTER, MPI_COMM_WORLD);//Scatter points
 	if (rank == MASTER || rank == numberOfProcesses - 1)//Check if there are points that has not sent
 	{
@@ -59,11 +55,7 @@ void scatterPoints(int rank, int numberOfProcesses, point_t* allPoints, int N, p
 			if (morePoint != 0)
 			{
 				*myPoints = (point_t*)realloc(*myPoints, (morePoint + (*numberOfPoints)) * sizeof(point_t));
-				if (*myPoints == NULL)//Allocation problem
-				{
-					printf("Not enough memory. Exiting!\n"); fflush(stdout);
-					MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-				}
+				checkAllocation(*myPoints);
 				MPI_Recv(&((*myPoints)[(*numberOfPoints)]), morePoint, PointMPIType, MASTER, 0, MPI_COMM_WORLD, &status);
 				*numberOfPoints = (*numberOfPoints) + morePoint;
 			}
@@ -71,11 +63,11 @@ void scatterPoints(int rank, int numberOfProcesses, point_t* allPoints, int N, p
 	}
 }
 
-void broadcastIterationData(point_t **clusters, int k, double *dt)
-{
-	MPI_Bcast(*clusters, k, PointMPIType, MASTER, MPI_COMM_WORLD);//Broadcast k clusters
-	MPI_Bcast(dt, 1, MPI_DOUBLE, MASTER, MPI_COMM_WORLD); //Broadcast dt to this iteration
-}
+//void broadcastIterationData(point_t **clusters, int k, double *dt)
+//{
+//	MPI_Bcast(*clusters, k, PointMPIType, MASTER, MPI_COMM_WORLD);//Broadcast k clusters
+//	MPI_Bcast(dt, 1, MPI_DOUBLE, MASTER, MPI_COMM_WORLD); //Broadcast dt to this iteration
+//}
 
 point_t* gatherPoints(int rank, int numberOfProcesses, point_t* myPoints, int numberOfPointsToSend)
 {//Gather points from all processes
@@ -83,11 +75,7 @@ point_t* gatherPoints(int rank, int numberOfProcesses, point_t* myPoints, int nu
 	if (rank == MASTER)
 	{
 		allPoints = (point_t*)malloc(numberOfProcesses * numberOfPointsToSend * sizeof(point_t));
-		if (allPoints == NULL)//Allocation problem
-		{
-			printf("Not enough memory. Exiting!\n"); fflush(stdout);
-			MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-		}
+		checkAllocation(allPoints);
 	}
 	MPI_Gather(myPoints, numberOfPointsToSend, PointMPIType, allPoints, numberOfPointsToSend, PointMPIType, MASTER, MPI_COMM_WORLD);
 	return allPoints;
@@ -99,11 +87,7 @@ bool* gatherBool(int rank, int numberOfProcesses, bool check)
 	if (rank == MASTER)
 	{
 		allPoints = (bool*)malloc(numberOfProcesses * sizeof(bool));
-		if (allPoints == NULL)//Allocation problem
-		{
-			printf("Not enough memory. Exiting!\n"); fflush(stdout);
-			MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-		}
+		checkAllocation(allPoints);
 	}
 	MPI_Gather(&check, 1, MPI_C_BOOL, allPoints, 1, MPI_C_BOOL, MASTER, MPI_COMM_WORLD);
 	return allPoints;
@@ -122,11 +106,7 @@ void collectPointsInClusters(int rank, int numberOfProcesses, int numberOfCluste
 			if (numberOfPointToSent != 0)
 			{
 				points[i] = (point_t*)realloc(points[i], (pointsInClusters[i] + numberOfPointToSent) * sizeof(point_t));
-				if (points[i] == NULL)
-				{//Allocation problem
-					printf("Not enough memory. Exiting!\n"); fflush(stdout);
-					MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-				}
+				checkAllocation(points[i]);
 				MPI_Recv(&(points[i][pointsInClusters[i]]), numberOfPointToSent, PointMPIType, rank + 1, i, MPI_COMM_WORLD, &status);//Send point
 				pointsInClusters[i] = pointsInClusters[i] + numberOfPointToSent;
 			}
@@ -140,18 +120,14 @@ void collectPointsInClusters(int rank, int numberOfProcesses, int numberOfCluste
 	}
 }
 
-double* sendArrayOfPointInCluster(int numberOfProcesses, point_t** pointsInClusters, int* numberOfPointInClusters, int numberOfClusters)
+double* masterWorkCalcQ(int numberOfProcesses, point_t** pointsInClusters, int* numberOfPointInClusters, int numberOfClusters)
 {//MASTER send point in clusters
 	MPI_Status status;
 	int i = 0, workProcesses = 0;
 	double temp;
 	double *calculatedDistance = (double*)calloc(numberOfClusters, sizeof(double));
+	checkAllocation(calculatedDistance);
 
-	if (calculatedDistance == NULL)//Allocation problem
-	{
-		printf("Not enough memory. Exiting!\n"); fflush(stdout);
-		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
 	for (; i < numberOfClusters && workProcesses < numberOfProcesses - 1; i++)
 	{//Send first job
 		if (numberOfPointInClusters[i] > 1)
@@ -182,7 +158,7 @@ double* sendArrayOfPointInCluster(int numberOfProcesses, point_t** pointsInClust
 	return calculatedDistance;
 }
 
-point_t* receiveArrayOfPointInCluster(int *workSize, int *clusterId, double distance, bool found)
+point_t* slavesWorkCalcQ(int *workSize, int *clusterId, double distance, bool found)
 {//Slave get points to work from MASTER
 	point_t* result = NULL;
 	MPI_Status status;
@@ -194,11 +170,7 @@ point_t* receiveArrayOfPointInCluster(int *workSize, int *clusterId, double dist
 	{
 		*clusterId = status.MPI_TAG;
 		result = (point_t*)malloc((*workSize) * sizeof(point_t));
-		if (result == NULL)//Allocation problem
-		{
-			printf("Not enough memory. Exiting!\n"); fflush(stdout);
-			MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-		}
+		checkAllocation(result);
 		MPI_Recv(result, *workSize, PointMPIType, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &status);//Receive point
 	}
 	return result;

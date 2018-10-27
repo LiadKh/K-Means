@@ -1,7 +1,12 @@
 #pragma once
 
+#include "cuda_runtime.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
 #define MASTER 0
-#define DEBUG
+#define DEBUG_MOOD
 
 typedef struct
 {
@@ -13,3 +18,5 @@ typedef struct
 	double vz;
 	int cluster;
 } point_t;
+
+void checkAllocation(void* ptr);
