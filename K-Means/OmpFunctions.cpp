@@ -166,30 +166,19 @@ double biggestDistance(point_t* points, int numberOfPoints)
 double findQ(double* maxDistance, point_t* clusters, int numberOfClusters)
 {
 	double q = 0, dis = NULL;
-	int tid = NULL, numberOfThreads = omp_get_max_threads();
-	double* distanceArray = (double*)calloc(numberOfThreads, sizeof(double));
-	checkAllocation(distanceArray);
-
-#pragma omp parallel private(tid,dis)
+#pragma omp parallel for private(dis) reduction(+:q)
+	for (int i = 0; i < numberOfClusters; i++)
 	{
-		tid = omp_get_thread_num();//Thread id
-#pragma omp for
-		for (int i = 0; i < numberOfClusters; i++)
+		for (int j = 0; j < numberOfClusters; j++)
 		{
-			for (int j = 0; j < numberOfClusters; j++)
+			if (i != j)
 			{
-				if (i != j)
-				{
-					dis = distancePoints(&(clusters[i]), &(clusters[j]));
-					if (dis != 0)
-						distanceArray[tid] = distanceArray[tid] + maxDistance[i] / dis;
-				}
+				dis = distancePoints(&(clusters[i]), &(clusters[j]));
+				if (dis != 0)
+					q += (maxDistance[i] / dis);
 			}
 		}
 	}
-	for (int i = 0; i < numberOfThreads; i++)
-		q += distanceArray[i];
-	free(distanceArray);
 	q = q / (numberOfClusters*(numberOfClusters - 1));
 	return q;
 }

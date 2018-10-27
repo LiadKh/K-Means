@@ -7,8 +7,6 @@
 
 #define FINISH_WORK_TAG 999
 
-static MPI_Datatype PointMPIType;
-
 void mpiInit(int *argc, char** argv[], int *rank, int *numberOfProcesses);
 void commitMpiPointType();
 void scatterPoints(int rank, int numberOfProcesses, point_t* allPoints, int N, point_t** myPoints, int *numberOfPoints);

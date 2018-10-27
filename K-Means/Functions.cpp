@@ -98,12 +98,11 @@ void setCluster(point_t *points, int numberOfPoints, point_t* clusters, int numb
 	}
 }
 
-point_t* getNewClusters(int rank, int numberOfProcesses, point_t* points, int numberOfPoints, point_t* oldClusters, int numberOfClusters, int **pointInCluster)
+point_t* getNewClusters(int rank, int numberOfProcesses, point_t* points, int numberOfPoints, point_t* oldClusters, int numberOfClusters, int *numberOfPointInCluster)
 {//Find new clusters
 	point_t* newClusters = NULL;
-	*pointInCluster = (int*)calloc(numberOfClusters, sizeof(int));
-	checkAllocation(*pointInCluster);
-	point_t* sumClustersArray = sumClusters(points, numberOfPoints, numberOfClusters, *pointInCluster);//Sum the points x,y,z in each cluster
+	memset(numberOfPointInCluster, 0, numberOfClusters * sizeof(int));
+	point_t* sumClustersArray = sumClusters(points, numberOfPoints, numberOfClusters, numberOfPointInCluster);//Sum the points x,y,z in each cluster
 	point_t* allSumClustersArrays = gatherPoints(rank, numberOfProcesses, sumClustersArray, numberOfClusters);
 	if (rank == MASTER)
 	{
@@ -155,14 +154,14 @@ bool checkTerminationCondition(int iterations, int LIMIT, bool movedPoint)
 	if (iterations >= LIMIT - 1)//Check maximum number of iterations
 	{
 #ifdef DEBUG_MOOD
-		printf("Max iteration\n"); fflush(stdout);
+		printf("\tMax iteration\n"); fflush(stdout);
 #endif
 		return false;
 	}
 	if (!movedPoint)//Check no point move to another cluster
 	{
 #ifdef DEBUG_MOOD
-		printf("No point moved\n"); fflush(stdout);
+		printf("\tNo point moved\n"); fflush(stdout);
 #endif
 		return false;
 	}
@@ -174,6 +173,8 @@ double kmeansIterations(int rank, int numberOfProcesses, point_t* points, int nu
 	point_t* newClusters = NULL;
 	int iteration = 0, *pointCloseCluster, *numberOfPointInCluster = NULL;
 	bool anotherIteration, isMovedPoint;
+	numberOfPointInCluster = (int*)malloc(k * sizeof(int));
+	checkAllocation(numberOfPointInCluster);
 	pointCloseCluster = (int*)calloc(numberOfPoints, sizeof(int));
 	checkAllocation(pointCloseCluster);
 	if (rank == MASTER)
@@ -182,10 +183,13 @@ double kmeansIterations(int rank, int numberOfProcesses, point_t* points, int nu
 	{
 		MPI_Bcast(clusters, k, PointMPIType, MASTER, MPI_COMM_WORLD);//Broadcast k clusters
 		setCluster(points, numberOfPoints, clusters, k);
-		newClusters = getNewClusters(rank, numberOfProcesses, points, numberOfPoints, clusters, k, &numberOfPointInCluster);//Get the new clusters
+		newClusters = getNewClusters(rank, numberOfProcesses, points, numberOfPoints, clusters, k, numberOfPointInCluster);//Get the new clusters
 		isMovedPoint = checkMovedPoint(rank, numberOfProcesses, points, pointCloseCluster, numberOfPoints);//If there is point that moved to another cluster
 		if (rank == MASTER)
 		{
+#ifdef DEBUG_MOOD
+			printf("\tK-Means iteration: %d\n", iteration + 1); fflush(stdout);
+#endif
 			anotherIteration = checkTerminationCondition(iteration, LIMIT, isMovedPoint);//Check the termination condition
 			iteration++;
 			memcpy(clusters, newClusters, k * sizeof(point_t));
@@ -193,7 +197,7 @@ double kmeansIterations(int rank, int numberOfProcesses, point_t* points, int nu
 		MPI_Bcast(&anotherIteration, 1, MPI_C_BOOL, MASTER, MPI_COMM_WORLD);//MASTER send if there is more iteration
 		free(newClusters);
 	} while (anotherIteration);
-	double q = calucQ(rank, numberOfProcesses, points, numberOfPoints, newClusters, k, numberOfPointInCluster);//Calculate quality measure
+	double q = calucQ(rank, numberOfProcesses, points, numberOfPoints, clusters, k, numberOfPointInCluster);//Calculate quality measure
 	freeAllocations(2, pointCloseCluster, numberOfPointInCluster);
 	return q;
 }
@@ -266,15 +270,17 @@ void work(int rank, int numberOfProcesses, double *time, double *q, double dt, p
 #ifdef DEBUG_MOOD
 			printf("Time: %f\n", *time); fflush(stdout);
 #endif
-	
 		}
-		MPI_Bcast(&time, 1, MPI_DOUBLE, MASTER, MPI_COMM_WORLD);
+		MPI_Bcast(time, 1, MPI_DOUBLE, MASTER, MPI_COMM_WORLD);
 		incPointsDT(points, numberOfPoints, *time, incPoints);
 		*q = kmeansIterations(rank, numberOfProcesses, incPoints, numberOfPoints, clusters, k, LIMIT);
 		if (rank == MASTER)
 		{
 			stopWork = checkConditions(T, *time, QM, *q);//Check the condition to stop
 			iterationNumber++;
+#ifdef DEBUG_MOOD
+			printf("Quality found: %f\n%s\n", *q, newLine); fflush(stdout);
+#endif
 		}
 		MPI_Bcast(&stopWork, 1, MPI_C_BOOL, MASTER, MPI_COMM_WORLD);
 	} while (stopWork);

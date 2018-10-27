@@ -1,5 +1,7 @@
 #include "MpiFunctions.h"
 
+MPI_Datatype PointMPIType;
+
 void mpiInit(int *argc, char** argv[], int *rank, int *numberOfProcesses)
 {//Init MPI
 	MPI_Init(argc, argv);

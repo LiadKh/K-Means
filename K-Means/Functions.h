@@ -14,6 +14,8 @@
 #define OUTPUT_FILE "output.txt"
 #define CUDA_PERCENT_OF_WORK 0.2 //[0,1]
 
+extern MPI_Datatype PointMPIType;
+
 static char newLine[] = "------------------------------------------------------------";
 
 char* createFileName(char* path, int pathSize, char* fileName, int nameSize);
@@ -22,7 +24,7 @@ point_t* readDataFile(char* path, int pathSize, int *N, int* K, double* T, doubl
 void initWork(int rank, int numberOfProcesses, point_t *allPoints, int N, point_t **myPoints, int *myNumberOfPoints, point_t **clusters, int *k);
 void incPointsDT(point_t* points, int numberOfPoints, double dt, point_t *incPoints);
 void setCluster(point_t *points, int numberOfPoints, point_t* clusters, int numberOfCluster);
-point_t* getNewClusters(int rank, int numberOfProcesses, point_t* points, int numberOfPoints, point_t* oldClusters, int numberOfClusters, int **pointInCluster);
+point_t* getNewClusters(int rank, int numberOfProcesses, point_t* points, int numberOfPoints, point_t* oldClusters, int numberOfClusters, int *numberOfPointInCluster);
 bool checkMovedPoint(int rank, int numberOfProcesses, point_t* points, int* pointInCluster, int numberOfPoints);
 point_t** setPointsInCluster(point_t* points, int numberOfPoints, int numberOfClusters, int *pointsInClusters);
 bool checkTerminationCondition(int iterations, int LIMIT, bool movedPoint);
