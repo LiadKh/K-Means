@@ -1,6 +1,7 @@
 #include "MpiFunctions.h"
 
 MPI_Datatype PointMPIType;
+MPI_Datatype PointVelocityMPIType;
 
 void mpiInit(int *argc, char** argv[], int *rank, int *numberOfProcesses)
 {//Init MPI
@@ -16,30 +17,45 @@ void mpiInit(int *argc, char** argv[], int *rank, int *numberOfProcesses)
 
 void commitMpiPointType()
 {// Create MPI user data type for point
-	point_t pointWithVelocity;
-	MPI_Datatype type[7] = { MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE ,MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_INT };
-	int blocklen[7] = { 1, 1, 1, 1, 1, 1, 1 };
-	MPI_Aint disp[7];
+	{
+		point_t point;
+		MPI_Datatype type[4] = { MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE , MPI_INT };
+		int blocklen[4] = { 1, 1, 1, 1 };
+		MPI_Aint disp[4];
 
-	disp[0] = (char *)&pointWithVelocity.x - (char *)&pointWithVelocity;
-	disp[1] = (char *)&pointWithVelocity.y - (char *)&pointWithVelocity;
-	disp[2] = (char *)&pointWithVelocity.z - (char *)&pointWithVelocity;
-	disp[3] = (char *)&pointWithVelocity.vx - (char *)&pointWithVelocity;
-	disp[4] = (char *)&pointWithVelocity.vy - (char *)&pointWithVelocity;
-	disp[5] = (char *)&pointWithVelocity.vz - (char *)&pointWithVelocity;
-	disp[6] = (char *)&pointWithVelocity.cluster - (char *)&pointWithVelocity;
-	MPI_Type_create_struct(7, blocklen, disp, type, &PointMPIType);
-	MPI_Type_commit(&PointMPIType);
+		disp[0] = (char *)&point.x - (char *)&point;
+		disp[1] = (char *)&point.y - (char *)&point;
+		disp[2] = (char *)&point.z - (char *)&point;
+		disp[3] = (char *)&point.cluster - (char *)&point;
+		MPI_Type_create_struct(4, blocklen, disp, type, &PointMPIType);
+		MPI_Type_commit(&PointMPIType);
+	}
+	{
+		point_velocity_t pointWithVelocity;
+		MPI_Datatype type[7] = { MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE ,MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_INT };
+		int blocklen[7] = { 1, 1, 1, 1, 1, 1, 1 };
+		MPI_Aint disp[7];
+
+		disp[0] = (char *)&pointWithVelocity.x - (char *)&pointWithVelocity;
+		disp[1] = (char *)&pointWithVelocity.y - (char *)&pointWithVelocity;
+		disp[2] = (char *)&pointWithVelocity.z - (char *)&pointWithVelocity;
+		disp[3] = (char *)&pointWithVelocity.vx - (char *)&pointWithVelocity;
+		disp[4] = (char *)&pointWithVelocity.vy - (char *)&pointWithVelocity;
+		disp[5] = (char *)&pointWithVelocity.vz - (char *)&pointWithVelocity;
+		disp[6] = (char *)&pointWithVelocity.cluster - (char *)&pointWithVelocity;
+		MPI_Type_create_struct(7, blocklen, disp, type, &PointVelocityMPIType);
+		MPI_Type_commit(&PointVelocityMPIType);
+	}
 }
 
-void scatterPoints(int rank, int numberOfProcesses, point_t* allPoints, int N, point_t** myPoints, int *numberOfPoints)
+void scatterPoints(int rank, int numberOfProcesses, point_velocity_t* allPoints, int N, point_velocity_t** myPoints, int *numberOfPoints)
 {//Scatter points from master
 	if (rank == MASTER)
 		*numberOfPoints = int(N / numberOfProcesses);
 	MPI_Bcast(numberOfPoints, 1, MPI_INT, MASTER, MPI_COMM_WORLD);//Broadcast number of points to each process
-	*myPoints = (point_t*)malloc((*numberOfPoints) * sizeof(point_t));//Allocate number of points
+	*myPoints = (point_velocity_t*)malloc((*numberOfPoints) * sizeof(point_velocity_t));//Allocate number of points
 	checkAllocation(*myPoints);
-	MPI_Scatter(allPoints, *numberOfPoints, PointMPIType, *myPoints, *numberOfPoints, PointMPIType, MASTER, MPI_COMM_WORLD);//Scatter points
+	MPI_Scatter(allPoints, *numberOfPoints, PointVelocityMPIType, *myPoints, *numberOfPoints, PointVelocityMPIType, MASTER, MPI_COMM_WORLD);//Scatter points
 	if (rank == MASTER || rank == numberOfProcesses - 1)//Check if there are points that has not sent
 	{
 		int morePoint;
@@ -48,7 +64,7 @@ void scatterPoints(int rank, int numberOfProcesses, point_t* allPoints, int N, p
 			morePoint = N % numberOfProcesses;
 			MPI_Send(&morePoint, 1, MPI_INT, numberOfProcesses - 1, 0, MPI_COMM_WORLD);
 			if (morePoint != 0)
-				MPI_Send(&(allPoints[(*numberOfPoints)*numberOfProcesses]), morePoint, PointMPIType, numberOfProcesses - 1, 0, MPI_COMM_WORLD);
+				MPI_Send(&(allPoints[(*numberOfPoints)*numberOfProcesses]), morePoint, PointVelocityMPIType, numberOfProcesses - 1, 0, MPI_COMM_WORLD);
 		}
 		else
 		{
@@ -56,20 +72,14 @@ void scatterPoints(int rank, int numberOfProcesses, point_t* allPoints, int N, p
 			MPI_Recv(&morePoint, 1, MPI_INT, MASTER, 0, MPI_COMM_WORLD, &status);
 			if (morePoint != 0)
 			{
-				*myPoints = (point_t*)realloc(*myPoints, (morePoint + (*numberOfPoints)) * sizeof(point_t));
+				*myPoints = (point_velocity_t*)realloc(*myPoints, (morePoint + (*numberOfPoints)) * sizeof(point_velocity_t));
 				checkAllocation(*myPoints);
-				MPI_Recv(&((*myPoints)[(*numberOfPoints)]), morePoint, PointMPIType, MASTER, 0, MPI_COMM_WORLD, &status);
+				MPI_Recv(&((*myPoints)[(*numberOfPoints)]), morePoint, PointVelocityMPIType, MASTER, 0, MPI_COMM_WORLD, &status);
 				*numberOfPoints = (*numberOfPoints) + morePoint;
 			}
 		}
 	}
 }
-
-//void broadcastIterationData(point_t **clusters, int k, double *dt)
-//{
-//	MPI_Bcast(*clusters, k, PointMPIType, MASTER, MPI_COMM_WORLD);//Broadcast k clusters
-//	MPI_Bcast(dt, 1, MPI_DOUBLE, MASTER, MPI_COMM_WORLD); //Broadcast dt to this iteration
-//}
 
 point_t* gatherPoints(int rank, int numberOfProcesses, point_t* myPoints, int numberOfPointsToSend)
 {//Gather points from all processes

@@ -17,6 +17,14 @@ typedef struct
 	double vy;
 	double vz;
 	int cluster;
+} point_velocity_t;
+
+typedef struct
+{
+	double x;
+	double y;
+	double z;
+	int cluster;
 } point_t;
 
 void checkAllocation(void* ptr);

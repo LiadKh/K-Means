@@ -1,6 +1,6 @@
 #include "OmpFunctions.h"
 
-void incPointsOMP(point_t* points, int numberOfPoints, double dt, point_t *incPoints)
+void incPointsOMP(point_velocity_t* points, int numberOfPoints, double dt, point_t *incPoints)
 {//Inc the point by dt time
 #pragma omp parallel for schedule(dynamic,1)
 	for (int i = 0; i < numberOfPoints; i++)

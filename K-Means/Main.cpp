@@ -7,7 +7,9 @@ int main(int argc, char* argv[])
 #endif
 	int rank, numberOfProcesses, N, K, LIMIT, myNumberOfPoints, pathSize;
 	double DT, time, T, QM, q;
-	point_t *allPoints, *myPoints, *clusters;
+	point_t *clusters;
+	point_velocity_t *allPoints, *myPoints;
+
 	char path[PATH_SIZE];
 
 	initProcesses(&argc, &argv, &rank, &numberOfProcesses, path, &pathSize);

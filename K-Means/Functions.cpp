@@ -30,9 +30,9 @@ void initProcesses(int *argc, char** argv[], int *rank, int *numberOfProcesses, 
 	}
 }
 
-point_t* readDataFile(char* path, int pathSize, int *N, int* K, double* T, double* dT, int* LIMIT, double* QM)
+point_velocity_t* readDataFile(char* path, int pathSize, int *N, int* K, double* T, double* dT, int* LIMIT, double* QM)
 {//Read data from file
-	point_t* points;
+	point_velocity_t* points;
 	char* input = createFileName(path, pathSize, INPUT_FILE, int(strlen(INPUT_FILE)));
 	FILE* f = fopen(input, "r");
 	if (f == NULL)//File problem
@@ -44,7 +44,7 @@ point_t* readDataFile(char* path, int pathSize, int *N, int* K, double* T, doubl
 	printf("Read points from: %s\n%s\n", input, newLine); fflush(stdout);
 #endif
 	fscanf(f, "%d %d %lf %lf %d %lf", N, K, T, dT, LIMIT, QM);//Read N, K, T, dT, LIMIT, QM
-	points = (point_t*)malloc((*N) * sizeof(point_t));
+	points = (point_velocity_t*)malloc((*N) * sizeof(point_velocity_t));
 	checkAllocation(points);
 	if ((*K) > (*N))// Check if number of points is more than clusters
 	{
@@ -58,7 +58,7 @@ point_t* readDataFile(char* path, int pathSize, int *N, int* K, double* T, doubl
 	return points;
 }
 
-void initWork(int rank, int numberOfProcesses, point_t *allPoints, int N, point_t **myPoints, int *myNumberOfPoints, point_t **clusters, int *k)
+void initWork(int rank, int numberOfProcesses, point_velocity_t *allPoints, int N, point_velocity_t **myPoints, int *myNumberOfPoints, point_t **clusters, int *k)
 {//Start every process with points and allocate memory for clusters
 	MPI_Bcast(k, 1, MPI_INT, MASTER, MPI_COMM_WORLD);//Broadcast number of clusters to send
 	*clusters = (point_t*)malloc((*k) * sizeof(point_t));//Allocate number of clusters points
@@ -66,7 +66,7 @@ void initWork(int rank, int numberOfProcesses, point_t *allPoints, int N, point_
 	scatterPoints(rank, numberOfProcesses, allPoints, N, myPoints, myNumberOfPoints);//Init process with The points that belong to him
 }
 
-void incPointsDT(point_t* points, int numberOfPoints, double dt, point_t *incPoints)
+void incPointsDT(point_velocity_t* points, int numberOfPoints, double dt, point_t *incPoints)
 {//Calculate increased points
 	int workSize = int(numberOfPoints * CUDA_PERCENT_OF_WORK);
 #pragma omp parallel sections // Divides the work into sections
@@ -256,7 +256,7 @@ bool checkConditions(double T, double time, double QM, double q)
 	return true;
 }
 
-void work(int rank, int numberOfProcesses, double *time, double *q, double dt, point_t *points, int numberOfPoints, point_t* clusters, int k, int LIMIT, double T, double QM)
+void work(int rank, int numberOfProcesses, double *time, double *q, double dt, point_velocity_t *points, int numberOfPoints, point_t* clusters, int k, int LIMIT, double T, double QM)
 {
 	int iterationNumber = 0;
 	bool stopWork;

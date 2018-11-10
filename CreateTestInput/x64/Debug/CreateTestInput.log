@@ -1,2 +1,3 @@
-﻿  CreateTestInput.vcxproj -> D:\Projects\Visual studio\Parallel and Distributed Computing - Final Project\K-Means\x64\Debug\CreateTestInput.exe
-  CreateTestInput.vcxproj -> D:\Projects\Visual studio\Parallel and Distributed Computing - Final Project\K-Means\x64\Debug\CreateTestInput.pdb (Partial PDB)
+﻿  Main.cpp
+  CreateTestInput.vcxproj -> D:\Projects\Visual studio\K-Means\x64\Debug\CreateTestInput.exe
+  CreateTestInput.vcxproj -> D:\Projects\Visual studio\K-Means\x64\Debug\CreateTestInput.pdb (Partial PDB)

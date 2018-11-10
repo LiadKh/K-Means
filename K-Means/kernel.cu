@@ -9,7 +9,7 @@
 #define MAX_CLUSTERS 200
 #define ONE_THREAD_WORK 5
 
-__global__ void incKernel(point_t *incPoints, const point_t *points, double dT, int numberOfPoints)
+__global__ void incKernel(point_t *incPoints, const point_velocity_t *points, double dT, int numberOfPoints)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index < numberOfPoints)
@@ -48,9 +48,9 @@ __global__ void setCloseClusterKernel(point_t *points, int numberOfPoints, point
 }
 
 // Helper function for using CUDA to inc point with dt speed in parallel.
-cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, double dT, point_t* incPoints)
+cudaError_t incPointsWithCuda(point_velocity_t* points, int numberOfPoints, double dT, point_t* incPoints)
 {
-	point_t *dev_points = 0;
+	point_velocity_t *dev_points = 0;
 	point_t *dev_iniced_points = 0;
 	cudaError_t cudaStatus;
 
@@ -62,7 +62,7 @@ cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, double dT, po
 	}
 
 	// Allocate GPU buffers for three vectors (two input, one output)    .
-	cudaStatus = cudaMalloc((void**)&dev_points, numberOfPoints * sizeof(point_t));
+	cudaStatus = cudaMalloc((void**)&dev_points, numberOfPoints * sizeof(point_velocity_t));
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaMalloc failed!");
 		goto Error;
@@ -75,7 +75,7 @@ cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, double dT, po
 	}
 
 	// Copy input vectors from host memory to GPU buffers.
-	cudaStatus = cudaMemcpy(dev_points, points, numberOfPoints * sizeof(point_t), cudaMemcpyHostToDevice);
+	cudaStatus = cudaMemcpy(dev_points, points, numberOfPoints * sizeof(point_velocity_t), cudaMemcpyHostToDevice);
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaMemcpy failed!");
 		goto Error;

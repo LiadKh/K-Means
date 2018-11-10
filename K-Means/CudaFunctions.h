@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void incPointsCUDA(point_t* points, int numberOfPoints, double dt, point_t *incPoints);
-cudaError_t incPointsWithCuda(point_t* points, int numberOfPoints, double dT, point_t* incPoints);
+void incPointsCUDA(point_velocity_t* points, int numberOfPoints, double dt, point_t *incPoints);
+cudaError_t incPointsWithCuda(point_velocity_t* points, int numberOfPoints, double dT, point_t* incPoints);
 void setClusterCUDA(point_t* points, int numberOfPoints, point_t* clusters, int numberOfCluster);
 cudaError_t setCloseClusterWithCuda(point_t* points, int numberOfPoints, point_t* clusters, int numberOfClusters);
