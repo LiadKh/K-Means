@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include "Const.h"
 
-#define THREAD_IN_BLOCK 1000
 #define MAX_CLUSTERS 200
 #define ONE_THREAD_WORK 5
 
@@ -81,8 +80,18 @@ cudaError_t incPointsWithCuda(point_velocity_t* points, int numberOfPoints, doub
 		goto Error;
 	}
 
+	int cudaWarpSize = 0;
+	cudaDeviceProp deviceProp;
+	if (cudaSuccess != cudaGetDeviceProperties(&deviceProp, 0)) {
+		printf("Get device properties failed.\n");
+		goto Error;
+	}
+	else {
+		cudaWarpSize = deviceProp.warpSize;
+	}
+
 	// Launch a kernel on the GPU with one thread for each element.
-	incKernel << <numberOfPoints / THREAD_IN_BLOCK + 1, THREAD_IN_BLOCK >> > (dev_iniced_points, dev_points, dT, numberOfPoints);
+	incKernel << <numberOfPoints / cudaWarpSize + 1, cudaWarpSize >> > (dev_iniced_points, dev_points, dT, numberOfPoints);
 
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
@@ -153,8 +162,18 @@ cudaError_t setCloseClusterWithCuda(point_t* points, int numberOfPoints, point_t
 		goto Error;
 	}
 
+	int cudaWarpSize = 0;
+	cudaDeviceProp deviceProp;
+	if (cudaSuccess != cudaGetDeviceProperties(&deviceProp, 0)) {
+		printf("Get device properties failed.\n");
+		goto Error;
+	}
+	else {
+		cudaWarpSize = deviceProp.warpSize;
+	}
+
 	//int numberOfThread = THREAD_IN_BLOCK / ONE_THREAD_WORK;
-	setCloseClusterKernel << <numberOfPoints / (THREAD_IN_BLOCK / ONE_THREAD_WORK) + 1, THREAD_IN_BLOCK >> > (dev_points, numberOfPoints, dev_clusters, numberOfClusters);
+	setCloseClusterKernel << <numberOfPoints / (cudaWarpSize / ONE_THREAD_WORK) + 1, cudaWarpSize >> > (dev_points, numberOfPoints, dev_clusters, numberOfClusters);
 
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
